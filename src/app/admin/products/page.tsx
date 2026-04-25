@@ -1,11 +1,10 @@
 "use client";
 
 import { useState, useEffect } from "react";
-import { Plus, Edit2, Trash2, X, Loader2 } from "lucide-react";
+import { Plus, Trash2, X, Loader2 } from "lucide-react";
 import Image from "next/image";
-import { collection, getDocs, addDoc, deleteDoc, doc, updateDoc } from "firebase/firestore";
-import { ref, uploadBytes, getDownloadURL } from "firebase/storage";
-import { db, storage } from "@/lib/firebase";
+import { collection, getDocs, addDoc, deleteDoc, doc } from "firebase/firestore";
+import { db } from "@/lib/firebase";
 
 interface Product {
   id: string;
@@ -32,8 +31,8 @@ export default function AdminProducts() {
     stock: "0",
     sizes: "S,M,L,XL",
     description: "",
+    image: "",
   });
-  const [imageFile, setImageFile] = useState<File | null>(null);
 
   useEffect(() => {
     fetchProducts();
@@ -69,14 +68,6 @@ export default function AdminProducts() {
     setUploading(true);
 
     try {
-      let imageUrl = "/images/hoodie.png"; // Fallback image
-
-      if (imageFile) {
-        const storageRef = ref(storage, `products/${Date.now()}_${imageFile.name}`);
-        const snapshot = await uploadBytes(storageRef, imageFile);
-        imageUrl = await getDownloadURL(snapshot.ref);
-      }
-
       const newProduct = {
         name: formData.name,
         category: formData.category,
@@ -84,7 +75,7 @@ export default function AdminProducts() {
         stock: parseInt(formData.stock),
         sizes: formData.sizes.split(",").map(s => s.trim()),
         description: formData.description,
-        image: imageUrl,
+        image: formData.image || "/images/hoodie.png",
         createdAt: new Date()
       };
 
@@ -92,8 +83,7 @@ export default function AdminProducts() {
       setProducts([...products, { id: docRef.id, ...newProduct }]);
       
       setIsModalOpen(false);
-      setFormData({ name: "", category: "Drop 01", price: "", stock: "0", sizes: "S,M,L,XL", description: "" });
-      setImageFile(null);
+      setFormData({ name: "", category: "Drop 01", price: "", stock: "0", sizes: "S,M,L,XL", description: "", image: "" });
     } catch (error) {
       console.error("Error adding product:", error);
       alert("Ürün eklenirken bir hata oluştu.");
@@ -118,16 +108,16 @@ export default function AdminProducts() {
         
         <button 
           onClick={() => setIsModalOpen(true)}
-          className="flex items-center gap-2 px-4 py-2 bg-fener-gold text-fener-black text-sm font-bold uppercase tracking-widest rounded hover:bg-white hover:text-black transition-colors"
+          className="flex items-center gap-2 px-4 py-2 bg-white text-black text-[10px] font-light uppercase tracking-[0.2em] rounded hover:bg-white/80 transition-colors"
         >
           <Plus size={16} /> Yeni Ürün Ekle
         </button>
       </div>
 
-      <div className="bg-[#0a0a0a] border border-white/10 rounded overflow-hidden min-h-[400px]">
+      <div className="bg-[#030303] border border-white/5 rounded overflow-hidden min-h-[400px]">
         {loading ? (
           <div className="flex justify-center items-center h-64">
-            <Loader2 className="animate-spin text-fener-gold" size={32} />
+            <Loader2 className="animate-spin text-white/30" size={32} />
           </div>
         ) : (
           <div className="overflow-x-auto">
@@ -200,8 +190,8 @@ export default function AdminProducts() {
             <form onSubmit={handleAddProduct} className="p-6 space-y-6">
               <div className="grid grid-cols-2 gap-6">
                 <div className="col-span-2 md:col-span-1 space-y-2">
-                  <label className="text-xs uppercase tracking-widest text-white/50 font-bold">Ürün Adı</label>
-                  <input required type="text" value={formData.name} onChange={e => setFormData({...formData, name: e.target.value})} className="w-full bg-white/5 border border-white/10 rounded p-3 text-sm focus:border-fener-gold outline-none" />
+                  <label className="text-[10px] uppercase tracking-[0.2em] text-white/50 font-light">Ürün Adı</label>
+                  <input required type="text" value={formData.name} onChange={e => setFormData({...formData, name: e.target.value})} className="w-full bg-white/5 border border-white/10 rounded p-3 text-sm focus:border-white outline-none" />
                 </div>
                 
                 <div className="col-span-2 md:col-span-1 space-y-2">
@@ -235,14 +225,14 @@ export default function AdminProducts() {
                 </div>
 
                 <div className="col-span-2 space-y-2">
-                  <label className="text-xs uppercase tracking-widest text-white/50 font-bold">Ürün Görseli</label>
-                  <input type="file" accept="image/*" onChange={e => e.target.files && setImageFile(e.target.files[0])} className="w-full bg-white/5 border border-white/10 rounded p-3 text-sm file:mr-4 file:py-2 file:px-4 file:rounded file:border-0 file:text-xs file:font-bold file:bg-fener-gold file:text-black hover:file:bg-white" />
+                  <label className="text-[10px] uppercase tracking-[0.2em] text-white/50 font-light">Ürün Görseli (URL veya dosya yolu)</label>
+                  <input type="text" value={formData.image} onChange={e => setFormData({...formData, image: e.target.value})} placeholder="/images/hoodie.png" className="w-full bg-white/5 border border-white/10 rounded p-3 text-sm focus:border-white outline-none" />
                 </div>
               </div>
 
               <div className="pt-6 border-t border-white/10 flex justify-end gap-4">
-                <button type="button" onClick={() => setIsModalOpen(false)} className="px-6 py-3 uppercase tracking-widest text-xs font-bold text-white/50 hover:text-white transition-colors">İptal</button>
-                <button type="submit" disabled={uploading} className="px-6 py-3 bg-fener-gold text-fener-black uppercase tracking-widest text-xs font-bold hover:bg-white transition-colors flex items-center gap-2">
+                <button type="button" onClick={() => setIsModalOpen(false)} className="px-6 py-3 uppercase tracking-[0.2em] text-[10px] font-light text-white/50 hover:text-white transition-colors">İptal</button>
+                <button type="submit" disabled={uploading} className="px-6 py-3 bg-white text-black uppercase tracking-[0.2em] text-[10px] font-light hover:bg-white/80 transition-colors flex items-center gap-2">
                   {uploading ? <Loader2 size={16} className="animate-spin" /> : <Plus size={16} />}
                   {uploading ? 'Kaydediliyor...' : 'Ürünü Ekle'}
                 </button>
