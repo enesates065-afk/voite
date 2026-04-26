@@ -133,17 +133,15 @@ export async function POST(req: Request): Promise<Response> {
     }
 
     if (!pendingData) {
-      // S3 LAST RESORT: query pendingCheckouts — take the most recent with matching orderId from Iyzico basket
-      // Iyzico returns basketId which is our shortOrderId (VOI-XXXXXX)
-      const basketId = result.basketId || '';
-      console.log("S3: trying basketId lookup:", basketId);
-      if (basketId) {
+      // S3: basketId is now the Firestore pendingCheckout doc ID (orderRef.id)
+      const basketId = (result.basketId || '').trim();
+      console.log("S3: trying basketId (Firestore doc ID) lookup:", basketId);
+      if (basketId && basketId.length > 5) {
         try {
-          const q = query(collection(db, "pendingCheckouts"), where("orderId", "==", basketId));
-          const snap = await getDocs(q);
-          if (!snap.empty) {
-            pendingDocId = snap.docs[0].id;
-            pendingData = snap.docs[0].data();
+          const snap = await getDoc(doc(db, "pendingCheckouts", basketId));
+          if (snap.exists()) {
+            pendingDocId = basketId;
+            pendingData = snap.data();
             console.log("S3 ✅ Found pendingCheckout by basketId:", pendingDocId);
           }
         } catch (e) { console.error("S3 error:", e); }
@@ -151,38 +149,41 @@ export async function POST(req: Request): Promise<Response> {
     }
 
     if (!pendingData) {
-      console.error("❌ Could not find pendingCheckout. Creating minimal order from Iyzico data.");
-      // Emergency: create an order from whatever Iyzico told us
+      console.error("❌ Could not find pendingCheckout. Creating emergency order.");
       const emergencyId = callbackConversationId || `callback-${Date.now()}`;
+      const emergencyOrderId = "VOI-" + Math.floor(100000 + Math.random() * 900000);
       try {
         await setDoc(doc(db, "orders", emergencyId), {
-          orderId: result.basketId || emergencyId,
+          orderId: emergencyOrderId,
           status: "Ödendi",
           paymentStatus: "Success",
           paymentId: String(result.paymentId || ""),
           total: result.paidPrice || result.price || 0,
-          customerName: "-",
-          customerEmail: "-",
-          items: [],
+          customerName: "-", customerEmail: "-", items: [],
           paidAt: new Date(),
           note: "Emergency order — pendingCheckout not found",
         });
-        console.log("Emergency order created:", emergencyId);
-      } catch (e) { console.error("Emergency order creation error:", e); }
-      return NextResponse.redirect(`${SITE_URL}/checkout/success`, { status: 303 });
+        console.log("Emergency order created:", emergencyOrderId);
+      } catch (e) { console.error("Emergency order error:", e); }
+      return NextResponse.redirect(`${SITE_URL}/checkout/success?kod=${encodeURIComponent(emergencyOrderId)}`, { status: 303 });
     }
 
     // ===== CREATE CONFIRMED ORDER =====
+    let confirmedOrderId = "";
     try {
+      // Generate VOI- code HERE — only after payment confirmed
+      confirmedOrderId = "VOI-" + Math.floor(100000 + Math.random() * 900000);
+
       await setDoc(doc(db, "orders", pendingDocId!), {
         ...pendingData,
+        orderId: confirmedOrderId,
         status: "Ödendi",
         paymentStatus: "Success",
         paymentId: String(result.paymentId || ""),
         paidAt: new Date(),
         updatedAt: new Date(),
       });
-      console.log("✅ Order created in orders:", pendingDocId);
+      console.log("✅ Order created:", confirmedOrderId, "| doc:", pendingDocId);
 
       // Clean up pendingCheckout
       try {
@@ -196,9 +197,9 @@ export async function POST(req: Request): Promise<Response> {
           await resend.emails.send({
             from: 'VOITÉ. <onboarding@resend.dev>',
             to: ADMIN_EMAIL,
-            subject: `✅ Ödeme Alındı — ${pendingData.orderId}`,
+            subject: `✅ Ödeme Alındı — ${confirmedOrderId}`,
             html: `<h2>✅ Ödeme Alındı</h2>
-              <p><b>Sipariş:</b> ${pendingData.orderId}</p>
+              <p><b>Sipariş:</b> ${confirmedOrderId}</p>
               <p><b>Müşteri:</b> ${pendingData.customerName} (${pendingData.customerEmail})</p>
               <p><b>Tutar:</b> ₺${pendingData.total}</p>
               <a href="${SITE_URL}/admin/orders" style="background:#000;color:#fff;padding:12px 24px;text-decoration:none;display:inline-block;margin-top:12px;">Admin Paneli</a>`,
@@ -210,7 +211,8 @@ export async function POST(req: Request): Promise<Response> {
       console.error("Order creation error:", dbError);
     }
 
-    return NextResponse.redirect(`${SITE_URL}/checkout/success`, { status: 303 });
+    return NextResponse.redirect(`${SITE_URL}/checkout/success?kod=${encodeURIComponent(confirmedOrderId)}`, { status: 303 });
+
 
   } catch (error) {
     console.error("Callback fatal error:", error);

@@ -1,26 +1,21 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useState, Suspense } from "react";
+import { useSearchParams } from "next/navigation";
 import { CheckCircle2, Copy, Check, Package } from "lucide-react";
 import Link from "next/link";
 import { useCartStore } from "@/store/useCartStore";
-import { collection, query, where, getDocs } from "firebase/firestore";
-import { db } from "@/lib/firebase";
 
-export default function CheckoutSuccessPage() {
+function SuccessContent() {
+  const searchParams = useSearchParams();
   const { clearCart } = useCartStore();
   const [copied, setCopied] = useState(false);
-  const [orderId, setOrderId] = useState<string>("");
+
+  // Order code comes from URL ?kod= param set by the callback
+  const orderId = searchParams.get("kod") || "";
 
   useEffect(() => {
     clearCart();
-
-    // Try to get the last order ID from localStorage (set during checkout)
-    const stored = localStorage.getItem("voite_last_order_id");
-    if (stored) {
-      setOrderId(stored);
-      localStorage.removeItem("voite_last_order_id");
-    }
   }, [clearCart]);
 
   const handleCopy = () => {
@@ -33,7 +28,8 @@ export default function CheckoutSuccessPage() {
   return (
     <div className="min-h-screen bg-voite-black pt-32 pb-24 flex items-center justify-center px-4">
       <div className="text-center max-w-lg w-full">
-        {/* Success Icon */}
+
+        {/* Icon */}
         <div className="flex justify-center mb-8">
           <div className="w-20 h-20 rounded-full bg-white/5 border border-white/10 flex items-center justify-center">
             <CheckCircle2 size={40} className="text-green-400" />
@@ -48,7 +44,7 @@ export default function CheckoutSuccessPage() {
         </p>
 
         {/* Order Code Box */}
-        {orderId && (
+        {orderId ? (
           <div className="bg-[#0a0a0a] border border-white/10 rounded p-6 mb-8">
             <p className="text-[10px] uppercase tracking-[0.25em] text-white/40 mb-3">
               Sipariş Takip Kodunuz
@@ -66,12 +62,16 @@ export default function CheckoutSuccessPage() {
               </button>
             </div>
             <p className="text-[10px] text-white/30 tracking-wide">
-              Bu kodu saklayın — sipariş takibi için gerekli olacak.
+              Bu kodu saklayın — sipariş takibi için gerekli.
             </p>
+          </div>
+        ) : (
+          <div className="bg-[#0a0a0a] border border-white/10 rounded p-6 mb-8">
+            <p className="text-white/40 text-sm">Sipariş onaylandı. Kod e-posta ile iletilecektir.</p>
           </div>
         )}
 
-        {/* CTA Buttons */}
+        {/* Buttons */}
         <div className="flex flex-col sm:flex-row gap-3 justify-center">
           {orderId && (
             <Link
@@ -91,5 +91,13 @@ export default function CheckoutSuccessPage() {
         </div>
       </div>
     </div>
+  );
+}
+
+export default function CheckoutSuccessPage() {
+  return (
+    <Suspense>
+      <SuccessContent />
+    </Suspense>
   );
 }

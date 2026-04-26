@@ -140,11 +140,8 @@ export async function POST(req: Request): Promise<Response> {
     const body = await req.json();
     const { customerName, customerEmail, customerPhone, address, items, total } = body;
 
-    // Create pending checkout — NOT orders. Orders are created only after payment success in callback.
-    const shortOrderId = "VOI-" + Math.floor(100000 + Math.random() * 900000).toString();
-
+    // Create pending checkout — NO order code yet. Code is generated only after payment confirms.
     const orderRef = await addDoc(collection(db, "pendingCheckouts"), {
-      orderId: shortOrderId,
       customerName,
       customerEmail,
       customerPhone,
@@ -204,7 +201,7 @@ export async function POST(req: Request): Promise<Response> {
       price,
       paidPrice: price,
       currency: "TRY",
-      basketId: shortOrderId,
+      basketId: orderRef.id,
       paymentGroup: "PRODUCT",
       callbackUrl: `${process.env.NEXT_PUBLIC_SITE_URL || 'https://voite.vercel.app'}/api/checkout/callback`,
       enabledInstallments: [1, 2, 3, 6, 9],
@@ -278,9 +275,9 @@ export async function POST(req: Request): Promise<Response> {
           console.error("Failed to save token to pendingCheckout:", e);
         }
       }
-      // Send emails asynchronously (don't await - don't block the redirect)
-      sendOrderEmails({ orderId: shortOrderId, customerName, customerEmail, address, items, total });
-      return NextResponse.json({ paymentPageUrl: result.paymentPageUrl, orderId: shortOrderId });
+      // Send emails asynchronously (non-blocking)
+      sendOrderEmails({ orderId: orderRef.id, customerName, customerEmail, address, items, total });
+      return NextResponse.json({ paymentPageUrl: result.paymentPageUrl });
     }
 
     return NextResponse.json({
