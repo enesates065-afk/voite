@@ -52,9 +52,9 @@ export default function CheckoutPage() {
         alert(data.error || "Ödeme başlatılırken bir hata oluştu.");
         setLoading(false);
       }
-    } catch (error) {
+    } catch (error: any) {
       console.error("Error creating checkout:", error);
-      alert("Sipariş oluşturulurken bir hata oluştu.");
+      alert("Sipariş oluşturulurken bir hata oluştu: " + (error.message || "Bilinmeyen hata"));
       setLoading(false);
     }
   };
