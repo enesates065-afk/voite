@@ -156,25 +156,37 @@ export async function POST(req: Request): Promise<Response> {
       createdAt: serverTimestamp()
     });
 
-    // Decrease stock for each item (non-blocking, best-effort)
+    // Decrease stock for each item — beden bazlı (sizeStock) veya toplam (stock)
     for (const item of items) {
       if (item.slug || item.id) {
         const productId = item.slug || item.id.split('-')[0];
+        const size = item.size; // e.g. "M"
         try {
           const productRef = doc(db, "products", productId);
           await runTransaction(db, async (transaction) => {
             const productSnap = await transaction.get(productRef);
-            if (productSnap.exists()) {
-              const currentStock = productSnap.data().stock || 0;
-              const newStock = Math.max(0, currentStock - item.quantity);
-              transaction.update(productRef, { stock: newStock });
+            if (!productSnap.exists()) return;
+            const data = productSnap.data();
+
+            if (data.sizeStock && size && data.sizeStock[size] !== undefined) {
+              // Per-size stock: azalt
+              const newSizeStock = { ...data.sizeStock };
+              newSizeStock[size] = Math.max(0, (newSizeStock[size] || 0) - item.quantity);
+              // Sync legacy total stock
+              const newTotal = Object.values(newSizeStock).reduce((a: number, b) => a + (b as number), 0);
+              transaction.update(productRef, { sizeStock: newSizeStock, stock: newTotal });
+            } else {
+              // Fallback: eski tek stok
+              const currentStock = data.stock || 0;
+              transaction.update(productRef, { stock: Math.max(0, currentStock - item.quantity) });
             }
           });
         } catch (stockErr) {
-          console.error(`Stock update failed for ${productId}:`, stockErr);
+          console.error(`Stock update failed for ${productId} size ${size}:`, stockErr);
         }
       }
     }
+
 
     // Split name / surname
     const nameParts = customerName.trim().split(/\s+/);

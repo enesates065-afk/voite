@@ -17,6 +17,7 @@ interface Product {
   sizes: string[];
   image: string;
   stock: number;
+  sizeStock?: Record<string, number>;
 }
 
 export default function ProductPage() {
@@ -67,7 +68,11 @@ export default function ProductPage() {
   }
 
   const handleAddToCart = () => {
-    if (!selectedSize || product.stock === 0) return;
+    if (!selectedSize) return;
+    
+    // Check per-size stock if available, otherwise fall back to total stock
+    const sizeQty = product.sizeStock ? (product.sizeStock[selectedSize] ?? 0) : product.stock;
+    if (sizeQty === 0) return;
     
     addItem({
       id: `${product.id}-${selectedSize}`,
@@ -130,42 +135,63 @@ export default function ProductPage() {
               <div className="flex justify-between items-center mb-6">
                 <h3 className="text-[10px] uppercase tracking-[0.2em] text-white/40 font-light">Beden Seç</h3>
               </div>
-              <div className="grid grid-cols-4 gap-2">
-                {product.sizes && product.sizes.map((size) => (
+            <div className="grid grid-cols-4 gap-2">
+                {product.sizes && product.sizes.map((size) => {
+                  const sizeQty = product.sizeStock ? (product.sizeStock[size] ?? 0) : product.stock;
+                  const isSoldOut = sizeQty === 0;
+                  return (
                   <button
                     key={size}
-                    onClick={() => setSelectedSize(size)}
-                    className={`py-4 text-xs font-light tracking-[0.1em] border transition-all duration-500 ${
-                      selectedSize === size 
-                        ? 'border-white bg-white text-black' 
-                        : 'border-white/10 text-white/70 hover:border-white/30'
+                    onClick={() => !isSoldOut && setSelectedSize(size)}
+                    disabled={isSoldOut}
+                    className={`py-4 text-xs font-light tracking-[0.1em] border transition-all duration-500 relative ${
+                      isSoldOut
+                        ? 'border-white/5 text-white/20 cursor-not-allowed'
+                        : selectedSize === size 
+                          ? 'border-white bg-white text-black' 
+                          : 'border-white/10 text-white/70 hover:border-white/30'
                     }`}
                   >
                     {size}
+                    {isSoldOut && (
+                      <span className="absolute inset-0 flex items-center justify-center">
+                        <span className="absolute w-full h-px bg-white/20 rotate-45" />
+                      </span>
+                    )}
                   </button>
-                ))}
-              </div>
+                )})}              </div>
               {!selectedSize && <p className="text-white/30 text-[10px] uppercase tracking-[0.1em] mt-3 opacity-0 transition-opacity" id="size-error">Lütfen beden seçin</p>}
             </div>
 
             {/* Add to Cart */}
             <button
               onClick={handleAddToCart}
-              disabled={product.stock === 0}
+              disabled={!selectedSize || (product.sizeStock ? (product.sizeStock[selectedSize] ?? 0) === 0 : product.stock === 0)}
               className={`w-full py-5 text-xs font-light uppercase tracking-[0.2em] flex justify-center items-center gap-3 transition-all duration-700 ${
-                product.stock === 0 ? 'bg-white/5 text-white/20 border border-white/5 cursor-not-allowed' :
+                !selectedSize ? 'bg-white/5 text-white/20 border border-white/5 cursor-not-allowed' :
+                (product.sizeStock ? (product.sizeStock[selectedSize] ?? 0) : product.stock) === 0 ? 'bg-white/5 text-white/20 border border-white/5 cursor-not-allowed' :
                 isAdded 
                   ? 'bg-white text-black' 
                   : 'bg-transparent text-white border border-white/20 hover:bg-white hover:text-black'
               }`}
             >
-              {product.stock === 0 ? 'Tükendi' : isAdded ? 'Eklendi' : 'Sepete Ekle'}
+              {!selectedSize ? 'Beden Seçin' :
+               (product.sizeStock ? (product.sizeStock[selectedSize] ?? 0) : product.stock) === 0 ? 'Bu Beden Tükendi' :
+               isAdded ? 'Eklendi' : 'Sepete Ekle'}
             </button>
             
             <div className="mt-12 pt-8 border-t border-white/5 flex flex-col gap-3 text-[10px] text-white/30 uppercase tracking-[0.2em] font-light">
               <div className="flex items-center gap-3">
-                <span className={`w-1.5 h-1.5 rounded-full ${product.stock > 0 ? 'bg-white/60' : 'bg-red-500/50'}`}></span> 
-                {product.stock > 0 ? 'Stokta mevcut' : 'Stokta yok'}
+                {selectedSize ? (
+                  <>
+                    <span className={`w-1.5 h-1.5 rounded-full ${(product.sizeStock ? (product.sizeStock[selectedSize] ?? 0) : product.stock) > 0 ? 'bg-white/60' : 'bg-red-500/50'}`} />
+                    {(product.sizeStock ? (product.sizeStock[selectedSize] ?? 0) : product.stock) > 0
+                      ? `${selectedSize} bedeni stokta mevcut`
+                      : `${selectedSize} bedeni tükendi`}
+                  </>
+                ) : (
+                  <><span className="w-1.5 h-1.5 rounded-full bg-white/60" /> Beden seçin</>
+                )}
               </div>
             </div>
 
