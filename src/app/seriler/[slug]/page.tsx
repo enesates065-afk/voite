@@ -27,68 +27,199 @@ export default function SeriesPage() {
   const meta = SERIES_META[slug] || { title: slug, tagline: "", description: "" };
 
   const [drops, setDrops] = useState<any[]>([]);
+  const [products, setProducts] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    const fetch = async () => {
+    const fetchAll = async () => {
       try {
-        const q = query(collection(db, "drops"), where("seriesSlug", "==", slug));
-        const snap = await getDocs(q);
-        const data = snap.docs.map(d => ({ id: d.id, ...d.data() }));
-        setDrops(data.sort((a: any, b: any) => a.dropNumber - b.dropNumber));
-      } catch (e) { console.error(e); }
-      finally { setLoading(false); }
+        // 1) Drops for this series
+        const dropQ = query(collection(db, "drops"), where("seriesSlug", "==", slug));
+        const dropSnap = await getDocs(dropQ);
+        const dropData = dropSnap.docs
+          .map(d => ({ id: d.id, ...d.data() }))
+          .sort((a: any, b: any) => a.dropNumber - b.dropNumber);
+        setDrops(dropData);
+
+        // 2) ALL products in this series (regardless of dropNumber)
+        const prodQ = query(collection(db, "products"), where("seriesSlug", "==", slug));
+        const prodSnap = await getDocs(prodQ);
+        const prodData = prodSnap.docs.map(d => ({ id: d.id, ...d.data() }));
+        setProducts(prodData);
+      } catch (e) {
+        console.error(e);
+      } finally {
+        setLoading(false);
+      }
     };
-    fetch();
+    fetchAll();
   }, [slug]);
+
+  // Products NOT assigned to any drop (standalone series products)
+  const standaloneProducts = products.filter((p: any) => !p.dropNumber);
+  // Products grouped by drop
+  const productsByDrop = (dropNumber: number) =>
+    products.filter((p: any) => p.dropNumber === dropNumber);
+
+  if (loading) return (
+    <div className="min-h-screen bg-voite-black flex items-center justify-center">
+      <Loader2 className="animate-spin text-white/20" size={32} />
+    </div>
+  );
 
   return (
     <div className="min-h-screen bg-voite-black pt-32 pb-24 px-6">
-      <div className="max-w-5xl mx-auto">
+      <div className="max-w-6xl mx-auto">
 
         {/* Series Header */}
         <div className="mb-20 border-b border-white/5 pb-16">
+          <Link href="/seriler" className="text-[9px] uppercase tracking-[0.4em] text-white/20 hover:text-white/40 transition-colors mb-6 block">
+            ← Seriler
+          </Link>
           <p className="text-[9px] uppercase tracking-[0.4em] text-white/20 mb-4">Seri</p>
           <h1 className="text-5xl font-light heading-style uppercase tracking-tight mb-4">{meta.title}</h1>
-          <p className="text-white/40 text-sm italic mb-6">{meta.tagline}</p>
-          <p className="text-white/30 text-sm font-light max-w-lg leading-relaxed">{meta.description}</p>
+          <p className="text-white/40 text-sm italic mb-3">{meta.tagline}</p>
+          <p className="text-white/25 text-sm font-light max-w-lg leading-relaxed">{meta.description}</p>
         </div>
 
-        {/* Drops */}
-        {loading ? (
-          <div className="flex justify-center py-24">
-            <Loader2 className="animate-spin text-white/20" size={32} />
+        {/* ─── DROPS (Limited, üstte) ─── */}
+        {drops.length > 0 && (
+          <div className="mb-24">
+            <div className="flex items-center gap-4 mb-8">
+              <h2 className="text-[10px] uppercase tracking-[0.35em] text-white/30 font-light">Limited Droplar</h2>
+              <div className="flex-1 h-px bg-white/5" />
+            </div>
+
+            <div className="space-y-3">
+              {drops.map((drop: any) => {
+                const dropProducts = productsByDrop(drop.dropNumber);
+                const totalDropStock = dropProducts.reduce((sum: number, p: any) => {
+                  if (p.sizeStock) return sum + Object.values(p.sizeStock as Record<string, number>).reduce((a, b) => a + b, 0);
+                  return sum + (p.stock || 0);
+                }, 0);
+
+                return (
+                  <Link key={drop.id}
+                    href={`/seriler/${slug}/drop-${drop.dropNumber}`}
+                    className="group flex items-center justify-between bg-[#050505] hover:bg-[#0a0a0a] transition-colors p-8 border border-white/5 hover:border-white/10">
+                    <div className="flex items-center gap-8">
+                      <div>
+                        <p className="text-[9px] uppercase tracking-[0.35em] text-white/20 mb-2">
+                          {drop.archived ? "Arşiv" : drop.active ? "Yayında" : "Yakında"}
+                        </p>
+                        <h3 className="text-xl font-light heading-style uppercase tracking-wide text-white">
+                          Drop {String(drop.dropNumber).padStart(2, "0")}
+                        </h3>
+                        {drop.description && (
+                          <p className="text-white/25 text-xs mt-1.5 font-light">{drop.description}</p>
+                        )}
+                      </div>
+                      {dropProducts.length > 0 && (
+                        <div className="hidden md:flex gap-2">
+                          {dropProducts.slice(0, 3).map((p: any) => (
+                            <div key={p.id} className="w-10 h-12 relative overflow-hidden bg-black/40 border border-white/5 rounded">
+                              <Image src={p.image || "/images/hoodie.png"} alt={p.name} fill className="object-cover opacity-60" />
+                            </div>
+                          ))}
+                          {dropProducts.length > 3 && (
+                            <div className="w-10 h-12 bg-black/40 border border-white/5 rounded flex items-center justify-center">
+                              <span className="text-[9px] text-white/30">+{dropProducts.length - 3}</span>
+                            </div>
+                          )}
+                        </div>
+                      )}
+                    </div>
+
+                    <div className="flex items-center gap-6">
+                      {drop.active && !drop.archived && (
+                        <div className="flex items-center gap-1.5">
+                          <span className="w-1.5 h-1.5 rounded-full bg-green-400 animate-pulse" />
+                          <span className="text-[9px] uppercase tracking-widest text-green-400 font-bold">Aktif</span>
+                        </div>
+                      )}
+                      {drop.archived && (
+                        <span className="text-[9px] uppercase tracking-widest text-white/20">Arşiv</span>
+                      )}
+                      {dropProducts.length > 0 && (
+                        <span className="text-[9px] text-white/20 uppercase tracking-widest hidden md:block">
+                          {dropProducts.length} ürün
+                        </span>
+                      )}
+                      <span className="text-white/15 group-hover:text-white/40 transition-colors text-xs uppercase tracking-widest">→</span>
+                    </div>
+                  </Link>
+                );
+              })}
+            </div>
           </div>
-        ) : drops.length === 0 ? (
-          <div className="text-center py-24">
-            <p className="text-white/20 uppercase tracking-widest text-sm">Henüz drop yok</p>
+        )}
+
+        {/* ─── ALL SERIES PRODUCTS (altta) ─── */}
+        {products.length > 0 && (
+          <div>
+            <div className="flex items-center gap-4 mb-8">
+              <h2 className="text-[10px] uppercase tracking-[0.35em] text-white/30 font-light">
+                {meta.title} — Tüm Ürünler
+              </h2>
+              <div className="flex-1 h-px bg-white/5" />
+              <span className="text-[9px] text-white/20 uppercase tracking-widest">{products.length} parça</span>
+            </div>
+
+            <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-6">
+              {products.map((product: any) => {
+                const totalStock = product.sizeStock
+                  ? Object.values(product.sizeStock as Record<string, number>).reduce((a, b) => a + b, 0)
+                  : product.stock || 0;
+
+                return (
+                  <Link key={product.id} href={`/product/${product.id}`} className="group">
+                    <div className="relative aspect-[3/4] overflow-hidden bg-[#0a0a0a] mb-4">
+                      <Image
+                        src={product.image || "/images/hoodie.png"}
+                        alt={product.name}
+                        fill
+                        className="object-cover grayscale group-hover:grayscale-0 transition-all duration-700"
+                      />
+                      {/* Drop badge */}
+                      {product.dropNumber && (
+                        <div className="absolute top-3 left-3 bg-black/80 px-2 py-1">
+                          <span className="text-[8px] uppercase tracking-widest text-white/60">
+                            Drop {String(product.dropNumber).padStart(2, "0")}
+                          </span>
+                        </div>
+                      )}
+                      {/* Sold out overlay */}
+                      {totalStock === 0 && (
+                        <div className="absolute inset-0 bg-black/60 flex items-center justify-center">
+                          <span className="text-[9px] uppercase tracking-widest text-white/40">Tükendi</span>
+                        </div>
+                      )}
+                      {/* Low stock */}
+                      {totalStock > 0 && totalStock <= 5 && (
+                        <div className="absolute bottom-3 left-3 bg-black/80 px-2 py-1">
+                          <span className="text-[8px] uppercase tracking-widest text-yellow-400">Son {totalStock}</span>
+                        </div>
+                      )}
+                    </div>
+                    <div className="flex justify-between items-start">
+                      <p className="text-xs uppercase tracking-[0.1em] text-white/70 group-hover:text-white transition-colors font-light leading-snug">
+                        {product.name}
+                      </p>
+                      <p className="text-xs font-mono text-white/40 ml-2 flex-shrink-0">₺{product.price}</p>
+                    </div>
+                    <p className="text-[9px] uppercase tracking-widest text-white/20 mt-1">{product.category}</p>
+                  </Link>
+                );
+              })}
+            </div>
+          </div>
+        )}
+
+        {/* Empty state */}
+        {!loading && drops.length === 0 && products.length === 0 && (
+          <div className="text-center py-32">
+            <p className="text-white/15 uppercase tracking-widest text-sm">Henüz ürün eklenmedi</p>
             <p className="text-white/10 text-xs mt-2">Yakında duyurulacak.</p>
-          </div>
-        ) : (
-          <div className="space-y-px">
-            {drops.map((drop: any) => (
-              <Link key={drop.id}
-                href={`/seriler/${slug}/drop-${drop.dropNumber}`}
-                className="group flex items-center justify-between bg-[#050505] hover:bg-[#0a0a0a] transition-colors p-8 border border-white/5 hover:border-white/10">
-                <div>
-                  <p className="text-[9px] uppercase tracking-[0.35em] text-white/20 mb-2">
-                    {drop.archived ? "Arşiv" : drop.active ? "Yayında" : "Yakında"}
-                  </p>
-                  <h2 className="text-xl font-light heading-style uppercase tracking-wide text-white">
-                    Drop {String(drop.dropNumber).padStart(2, "0")}
-                  </h2>
-                  {drop.description && (
-                    <p className="text-white/30 text-xs mt-2 font-light">{drop.description}</p>
-                  )}
-                </div>
-                <div className="flex items-center gap-4">
-                  {drop.active && !drop.archived && (
-                    <span className="text-[9px] uppercase tracking-widest text-green-400 font-bold">Aktif</span>
-                  )}
-                  <span className="text-white/20 group-hover:text-white/50 transition-colors text-xs uppercase tracking-widest">→</span>
-                </div>
-              </Link>
-            ))}
           </div>
         )}
 
