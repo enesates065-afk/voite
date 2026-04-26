@@ -7,7 +7,6 @@ import { motion, AnimatePresence } from "framer-motion";
 import { collection, getDocs, query, where } from "firebase/firestore";
 import { db } from "@/lib/firebase";
 import { ChevronLeft, ChevronRight } from "lucide-react";
-import { DropBadge } from "@/components/DropBadge";
 
 const SERIES_LABEL: Record<string, string> = {
   "silent-series": "Silent Series",
@@ -123,8 +122,6 @@ function DropSlide({ drop, products }: { drop: Drop; products: Product[] }) {
                         fill
                         className="object-cover grayscale group-hover:grayscale-0 transition-all duration-700"
                       />
-                      {/* Drop badge — top right corner */}
-                      <DropBadge dropNumber={drop.dropNumber} />
                       {totalStock === 0 && (
                         <div className="absolute inset-0 bg-black/70 flex items-center justify-center">
                           <span className="text-[9px] uppercase tracking-widest text-white/40">Tükendi</span>
