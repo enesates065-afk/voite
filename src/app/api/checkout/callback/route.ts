@@ -1,5 +1,5 @@
 import { NextResponse } from 'next/server';
-import { doc, updateDoc } from "firebase/firestore";
+import { collection, query, where, getDocs, doc, updateDoc } from "firebase/firestore";
 import { db } from "@/lib/firebase";
 import crypto from 'crypto';
 import { Resend } from 'resend';
@@ -39,12 +39,12 @@ export async function POST(req: Request): Promise<Response> {
   try {
     const formData = await req.formData();
     const token = formData.get("token") as string;
-    // Iyzico sends the ORIGINAL conversationId (= Firestore order doc ID) in the callback POST body
-    const firestoreOrderId = formData.get("conversationId") as string;
+    // Iyzico also sends conversationId in the callback POST body
+    const callbackConversationId = (formData.get("conversationId") as string || "").trim();
 
-    console.log("=== CALLBACK ===");
-    console.log("token:", token?.substring(0, 20));
-    console.log("conversationId from Iyzico:", firestoreOrderId);
+    console.log("=== CALLBACK START ===");
+    console.log("token:", token?.substring(0, 30));
+    console.log("conversationId from callback body:", callbackConversationId);
 
     if (!token) {
       return NextResponse.redirect(`${SITE_URL}/checkout/error`, { status: 303 });
@@ -53,7 +53,7 @@ export async function POST(req: Request): Promise<Response> {
     // Verify payment with Iyzico
     const requestBody = {
       locale: "tr",
-      conversationId: firestoreOrderId || token.substring(0, 20),
+      conversationId: token.substring(0, 20),
       token,
     };
 
@@ -75,56 +75,78 @@ export async function POST(req: Request): Promise<Response> {
     );
 
     const result = await iyzicoRes.json();
-    console.log("Iyzico verify result status:", result.status, "paymentStatus:", result.paymentStatus);
+    console.log("Iyzico verify — status:", result.status, "paymentStatus:", result.paymentStatus);
 
     if (result.status !== "success" || result.paymentStatus !== "SUCCESS") {
-      console.log("Payment failed or not successful:", JSON.stringify(result));
+      console.log("Payment not successful:", JSON.stringify(result));
       return NextResponse.redirect(`${SITE_URL}/checkout/error`, { status: 303 });
     }
 
-    // Update Firestore order — use conversationId from Iyzico's callback POST body
-    // This is the Firestore doc ID we set during checkout initialization
-    const orderId = firestoreOrderId || result.conversationId;
-    console.log("Updating Firestore order:", orderId);
+    // --- Find Firestore order ---
+    // Strategy 1: conversationId from callback body (= Firestore doc ID set during checkout init)
+    // Strategy 2: Look up by iyzicoToken field we saved in checkout/route.ts
+    // Strategy 3: callbackConversationId might already be the doc ID
 
-    if (orderId && orderId.length > 5) {
+    let firestoreDocId: string | null = null;
+
+    // Try strategy 1: callbackConversationId is the Firestore doc ID
+    if (callbackConversationId && callbackConversationId.length > 10) {
+      firestoreDocId = callbackConversationId;
+      console.log("Using conversationId from callback body:", firestoreDocId);
+    }
+
+    // Try strategy 2: look up by iyzicoToken
+    if (!firestoreDocId) {
       try {
-        await updateDoc(doc(db, "orders", orderId), {
-          status: "Ödendi",
-          paymentStatus: "Success",
-          paymentId: String(result.paymentId || ""),
-          updatedAt: new Date()
-        });
-        console.log("Firestore updated successfully for order:", orderId);
-
-        // Send confirmation email via Resend
-        if (resend && ADMIN_EMAIL) {
-          try {
-            await resend.emails.send({
-              from: 'onboarding@resend.dev',
-              to: ADMIN_EMAIL,
-              subject: `✅ Yeni Ödeme Alındı — ${orderId}`,
-              html: `
-                <div style="font-family:Arial,sans-serif;max-width:500px;">
-                  <h2 style="color:#000;">Ödeme Başarıyla Alındı</h2>
-                  <p><strong>Sipariş ID:</strong> ${orderId}</p>
-                  <p><strong>Ödeme ID:</strong> ${result.paymentId}</p>
-                  <p><strong>Tutar:</strong> ₺${result.price || result.paidPrice || ""}</p>
-                  <p>Admin panelinden siparişi görüntüleyebilirsiniz.</p>
-                  <a href="${SITE_URL}/admin/orders" style="background:#000;color:#fff;padding:12px 24px;text-decoration:none;display:inline-block;margin-top:16px;">Admin Panelini Aç</a>
-                </div>
-              `,
-            });
-            console.log("Admin email sent to:", ADMIN_EMAIL);
-          } catch (emailErr) {
-            console.error("Email error (non-blocking):", emailErr);
-          }
+        const q = query(collection(db, "orders"), where("iyzicoToken", "==", token));
+        const snap = await getDocs(q);
+        if (!snap.empty) {
+          firestoreDocId = snap.docs[0].id;
+          console.log("Found order by iyzicoToken:", firestoreDocId);
         }
-      } catch (dbError) {
-        console.error("Firestore update error:", dbError);
+      } catch (e) {
+        console.error("Token lookup error:", e);
       }
-    } else {
-      console.error("No valid orderId found. firestoreOrderId:", firestoreOrderId, "result.conversationId:", result.conversationId);
+    }
+
+    if (!firestoreDocId) {
+      console.error("Could not find Firestore order for token:", token.substring(0, 20));
+      // Still redirect to success — payment went through, we just couldn't update status
+      return NextResponse.redirect(`${SITE_URL}/checkout/success`, { status: 303 });
+    }
+
+    // Update Firestore order
+    try {
+      await updateDoc(doc(db, "orders", firestoreDocId), {
+        status: "Ödendi",
+        paymentStatus: "Success",
+        paymentId: String(result.paymentId || ""),
+        updatedAt: new Date()
+      });
+      console.log("✅ Firestore updated for order:", firestoreDocId);
+    } catch (dbError) {
+      console.error("Firestore update error:", dbError);
+    }
+
+    // Send admin notification email
+    if (resend && ADMIN_EMAIL) {
+      try {
+        await resend.emails.send({
+          from: 'VOITÉ. <onboarding@resend.dev>',
+          to: ADMIN_EMAIL,
+          subject: `✅ Ödeme Alındı — ${firestoreDocId}`,
+          html: `
+            <div style="font-family:Arial,sans-serif;max-width:500px;">
+              <h2>Ödeme Başarıyla Alındı</h2>
+              <p><strong>Sipariş:</strong> ${firestoreDocId}</p>
+              <p><strong>Ödeme ID:</strong> ${result.paymentId}</p>
+              <a href="${SITE_URL}/admin/orders" style="background:#000;color:#fff;padding:12px 24px;text-decoration:none;display:inline-block;margin-top:16px;">Admin Paneli</a>
+            </div>
+          `,
+        });
+      } catch (emailErr) {
+        console.error("Email error:", emailErr);
+      }
     }
 
     return NextResponse.redirect(`${SITE_URL}/checkout/success`, { status: 303 });

@@ -1,5 +1,5 @@
 import { NextResponse } from 'next/server';
-import { collection, addDoc, serverTimestamp, doc, runTransaction } from "firebase/firestore";
+import { collection, addDoc, serverTimestamp, doc, runTransaction, updateDoc } from "firebase/firestore";
 import { db } from "@/lib/firebase";
 import crypto from 'crypto';
 import { Resend } from 'resend';
@@ -256,6 +256,16 @@ export async function POST(req: Request): Promise<Response> {
     console.log("Iyzico response:", JSON.stringify(result));
 
     if (result.status === "success" && result.paymentPageUrl) {
+      // Save Iyzico token to Firestore so callback can reliably find this order
+      if (result.token) {
+        try {
+          await updateDoc(doc(db, "orders", orderRef.id), {
+            iyzicoToken: result.token,
+          });
+        } catch (e) {
+          console.error("Failed to save token to order:", e);
+        }
+      }
       // Send emails asynchronously (don't await - don't block the redirect)
       sendOrderEmails({ orderId: shortOrderId, customerName, customerEmail, address, items, total });
       return NextResponse.json({ paymentPageUrl: result.paymentPageUrl });
