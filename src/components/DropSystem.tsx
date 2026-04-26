@@ -29,6 +29,7 @@ interface Product {
   id: string;
   name: string;
   price: string;
+  compareAtPrice?: string;
   image: string;
   stock: number;
   sizeStock?: Record<string, number>;
