@@ -42,7 +42,7 @@ export async function POST(req: Request): Promise<Response> {
 
     const requestBody = {
       locale: "tr",
-      conversationId: "callback-verify",
+      conversationId: token.substring(0, 20),
       token,
     };
 
@@ -70,8 +70,9 @@ export async function POST(req: Request): Promise<Response> {
       return NextResponse.redirect(`${SITE_URL}/checkout/error`, { status: 303 });
     }
 
+    // conversationId was set to orderRef.id in the checkout route
     const orderId = result.conversationId;
-    if (orderId && orderId !== "callback-verify") {
+    if (orderId && orderId.length > 10) {  // Firestore IDs are ~20 chars
       try {
         await updateDoc(doc(db, "orders", orderId), {
           status: "Ödendi",
