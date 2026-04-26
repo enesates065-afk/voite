@@ -7,6 +7,7 @@ import Image from "next/image";
 import { collection, getDocs, query, where } from "firebase/firestore";
 import { db } from "@/lib/firebase";
 import { Loader2 } from "lucide-react";
+import { DropBadge } from "@/components/DropBadge";
 
 const SERIES_META: Record<string, { title: string; description: string; tagline: string }> = {
   "silent-series": {
@@ -180,21 +181,15 @@ export default function SeriesPage() {
                         fill
                         className="object-cover grayscale group-hover:grayscale-0 transition-all duration-700"
                       />
-                      {/* Drop badge */}
+                      {/* Drop badge for products that belong to a drop */}
                       {product.dropNumber && (
-                        <div className="absolute top-3 left-3 bg-black/80 px-2 py-1">
-                          <span className="text-[8px] uppercase tracking-widest text-white/60">
-                            Drop {String(product.dropNumber).padStart(2, "0")}
-                          </span>
-                        </div>
+                        <DropBadge dropNumber={product.dropNumber} />
                       )}
-                      {/* Sold out overlay */}
                       {totalStock === 0 && (
                         <div className="absolute inset-0 bg-black/60 flex items-center justify-center">
                           <span className="text-[9px] uppercase tracking-widest text-white/40">Tükendi</span>
                         </div>
                       )}
-                      {/* Low stock */}
                       {totalStock > 0 && totalStock <= 5 && (
                         <div className="absolute bottom-3 left-3 bg-black/80 px-2 py-1">
                           <span className="text-[8px] uppercase tracking-widest text-yellow-400">Son {totalStock}</span>
