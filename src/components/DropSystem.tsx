@@ -7,6 +7,7 @@ import { motion, AnimatePresence } from "framer-motion";
 import { collection, getDocs, query, where } from "firebase/firestore";
 import { db } from "@/lib/firebase";
 import { ChevronLeft, ChevronRight } from "lucide-react";
+import { ProductCard } from "@/components/ProductCard";
 
 const SERIES_LABEL: Record<string, string> = {
   "silent-series": "Silent Series",
@@ -109,37 +110,19 @@ function DropSlide({ drop, products }: { drop: Drop; products: Product[] }) {
             </div>
           ) : (
             <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4 md:gap-6">
-              {products.map(product => {
-                const totalStock = product.sizeStock
-                  ? Object.values(product.sizeStock).reduce((a, b) => a + b, 0)
-                  : product.stock || 0;
-                return (
-                  <Link key={product.id} href={`/product/${product.id}`} className="group">
-                    <div className="relative aspect-[3/4] overflow-hidden bg-[#0a0a0a] mb-3">
-                      <Image
-                        src={product.image || "/images/hoodie.png"}
-                        alt={product.name}
-                        fill
-                        className="object-cover grayscale group-hover:grayscale-0 transition-all duration-700"
-                      />
-                      {totalStock === 0 && (
-                        <div className="absolute inset-0 bg-black/70 flex items-center justify-center">
-                          <span className="text-[9px] uppercase tracking-widest text-white/40">Tükendi</span>
-                        </div>
-                      )}
-                      {totalStock > 0 && totalStock <= 5 && (
-                        <div className="absolute bottom-3 left-3 bg-black/80 px-2 py-1">
-                          <span className="text-[8px] uppercase tracking-widest text-yellow-400">Son {totalStock}</span>
-                        </div>
-                      )}
-                    </div>
-                    <p className="text-xs uppercase tracking-[0.1em] text-white/60 group-hover:text-white transition-colors font-light">
-                      {product.name}
-                    </p>
-                    <p className="text-xs font-mono text-white/35 mt-0.5">₺{product.price}</p>
-                  </Link>
-                );
-              })}
+              {products.map(product => (
+                <ProductCard
+                  key={product.id}
+                  id={product.id}
+                  name={product.name}
+                  price={product.price}
+                  compareAtPrice={product.compareAtPrice}
+                  image={product.image}
+                  stock={product.stock}
+                  sizeStock={product.sizeStock}
+                  dropNumber={drop.dropNumber}
+                />
+              ))}
             </div>
           )}
 

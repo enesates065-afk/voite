@@ -7,6 +7,7 @@ import Image from "next/image";
 import { collection, getDocs, query, where } from "firebase/firestore";
 import { db } from "@/lib/firebase";
 import { Loader2 } from "lucide-react";
+import { ProductCard } from "@/components/ProductCard";
 
 const SERIES_META: Record<string, { title: string; description: string; tagline: string }> = {
   "silent-series": {
@@ -172,53 +173,18 @@ export default function SeriesPage() {
                   : product.stock || 0;
 
                 return (
-                  <Link key={product.id} href={`/product/${product.id}`} className="group">
-                    <div className="relative aspect-[3/4] overflow-hidden bg-[#0a0a0a] mb-4">
-                      <Image
-                        src={product.image || "/images/hoodie.png"}
-                        alt={product.name}
-                        fill
-                        className="object-cover grayscale group-hover:grayscale-0 transition-all duration-700"
-                      />
-                      {/* Drop badge */}
-                      {product.dropNumber && (
-                        <div className="absolute top-3 left-3 bg-black/80 px-2 py-1">
-                          <span className="text-[8px] uppercase tracking-widest text-white/60">
-                            Drop {String(product.dropNumber).padStart(2, "0")}
-                          </span>
-                        </div>
-                      )}
-                      {/* Sold out overlay */}
-                      {totalStock === 0 && (
-                        <div className="absolute inset-0 bg-black/60 flex items-center justify-center">
-                          <span className="text-[9px] uppercase tracking-widest text-white/40">Tükendi</span>
-                        </div>
-                      )}
-                      {/* Low stock */}
-                      {totalStock > 0 && totalStock <= 5 && (
-                        <div className="absolute bottom-3 left-3 bg-black/80 px-2 py-1">
-                          <span className="text-[8px] uppercase tracking-widest text-yellow-400">Son {totalStock}</span>
-                        </div>
-                      )}
-                    </div>
-                    <div className="flex justify-between items-start">
-                      <p className="text-xs uppercase tracking-[0.1em] text-white/70 group-hover:text-white transition-colors font-light leading-snug">
-                        {product.name}
-                      </p>
-                      <div className="flex flex-col items-end ml-2 flex-shrink-0">
-                        <p className="text-xs font-mono text-white/60">₺{product.price}</p>
-                        {product.compareAtPrice && parseFloat(product.compareAtPrice) > parseFloat(product.price) && (
-                          <>
-                            <p className="text-[9px] font-mono text-white/25 line-through">₺{product.compareAtPrice}</p>
-                            <span className="text-[8px] font-bold text-white/60 bg-white/10 px-1.5 py-0.5 mt-0.5">
-                              %{Math.round((1 - parseFloat(product.price) / parseFloat(product.compareAtPrice)) * 100)}
-                            </span>
-                          </>
-                        )}
-                      </div>
-                    </div>
-                    <p className="text-[9px] uppercase tracking-widest text-white/20 mt-1">{product.category}</p>
-                  </Link>
+                  <ProductCard
+                    key={product.id}
+                    id={product.id}
+                    name={product.name}
+                    price={product.price}
+                    compareAtPrice={product.compareAtPrice}
+                    image={product.image}
+                    stock={product.stock}
+                    sizeStock={product.sizeStock}
+                    category={product.category}
+                    dropNumber={product.dropNumber}
+                  />
                 );
               })}
             </div>
