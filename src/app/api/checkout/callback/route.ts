@@ -37,7 +37,7 @@ export async function POST(req: Request): Promise<Response> {
     const token = formData.get("token") as string;
 
     if (!token) {
-      return NextResponse.redirect(`${SITE_URL}/checkout/error`);
+      return NextResponse.redirect(`${SITE_URL}/checkout/error`, { status: 303 });
     }
 
     const requestBody = {
@@ -67,7 +67,7 @@ export async function POST(req: Request): Promise<Response> {
     console.log("Callback result:", JSON.stringify(result));
 
     if (result.status !== "success" || result.paymentStatus !== "SUCCESS") {
-      return NextResponse.redirect(`${SITE_URL}/checkout/error`);
+      return NextResponse.redirect(`${SITE_URL}/checkout/error`, { status: 303 });
     }
 
     const orderId = result.conversationId;
@@ -84,10 +84,10 @@ export async function POST(req: Request): Promise<Response> {
       }
     }
 
-    return NextResponse.redirect(`${SITE_URL}/checkout/success`);
+    return NextResponse.redirect(`${SITE_URL}/checkout/success`, { status: 303 });
 
   } catch (error) {
     console.error("Callback error:", error);
-    return NextResponse.redirect(`${SITE_URL}/checkout/error`);
+    return NextResponse.redirect(`${SITE_URL}/checkout/error`, { status: 303 });
   }
 }
