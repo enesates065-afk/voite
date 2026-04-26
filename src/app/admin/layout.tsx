@@ -1,5 +1,5 @@
 import Link from "next/link";
-import { LayoutDashboard, ShoppingCart, CreditCard, Package, LogOut } from "lucide-react";
+import { LayoutDashboard, ShoppingCart, CreditCard, Package, LogOut, Layers } from "lucide-react";
 
 export const metadata = {
   title: "VOITÉ. Admin",
@@ -31,6 +31,9 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
           <Link href="/admin/products" className="flex items-center gap-4 px-2 py-2 text-[10px] font-light uppercase tracking-[0.2em] text-white/50 hover:text-white transition-colors">
             <Package size={14} /> Ürünler
           </Link>
+          <Link href="/admin/drops" className="flex items-center gap-4 px-2 py-2 text-[10px] font-light uppercase tracking-[0.2em] text-white/50 hover:text-white transition-colors">
+            <Layers size={14} /> Seriler & Droplar
+          </Link>
         </nav>
 
         <div className="p-4 border-t border-white/10">
@@ -45,7 +48,7 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
         <header className="h-16 border-b border-white/10 bg-[#0a0a0a]/50 backdrop-blur-md flex items-center justify-between px-8 sticky top-0 z-10">
           <h2 className="text-sm font-bold tracking-widest uppercase text-white/50">Yönetim Portalı</h2>
           <div className="flex items-center gap-3">
-            <div className="w-8 h-8 rounded-full bg-fener-gold flex items-center justify-center text-black font-bold">A</div>
+            <div className="w-8 h-8 rounded-full bg-white/10 border border-white/20 flex items-center justify-center text-white font-bold text-xs">A</div>
             <span className="text-sm font-bold">Admin</span>
           </div>
         </header>

@@ -1,55 +1,66 @@
 import Image from "next/image";
+import Link from "next/link";
 
 export const metadata = {
-  title: "Hakkımızda | F-Editör",
-  description: "F-Editör'ün hikayesi. Dijital ruh, fiziksel form.",
+  title: "Hakkımızda — VOITÉ.",
+  description: "VOITÉ. — Sınırlı üretim, yüksek etki. Sessiz lüks streetwear.",
 };
 
-export default function AboutPage() {
+export default function HakkimizdaPage() {
   return (
-    <div className="pt-32 pb-32 bg-fener-black min-h-screen">
-      <div className="container mx-auto px-6">
-        <div className="flex flex-col lg:flex-row gap-16 items-center">
-          
-          <div className="flex-1 space-y-8">
-            <h1 className="text-5xl md:text-7xl font-black heading-style uppercase tracking-tighter leading-none">
-              Dijital <br />
-              <span className="text-fener-gold text-glow">Ruh.</span>
-            </h1>
-            
-            <div className="w-16 h-1 bg-white/20"></div>
-            
-            <div className="space-y-6 text-lg text-white/70 font-light leading-relaxed">
+    <div className="min-h-screen bg-voite-black pt-32 pb-24">
+      <div className="container mx-auto px-6 max-w-6xl">
+        <div className="grid lg:grid-cols-2 gap-16 items-center">
+
+          {/* Text */}
+          <div className="space-y-10">
+            <div className="space-y-4">
+              <p className="text-[10px] uppercase tracking-[0.4em] text-white/30 font-light">Kimiz</p>
+              <h1 className="text-5xl font-light heading-style uppercase tracking-tight leading-tight">
+                Sessiz.<br />
+                <span className="text-white/40">Sınırlı.</span><br />
+                Seçilmiş.
+              </h1>
+            </div>
+
+            <div className="w-12 h-px bg-white/20" />
+
+            <div className="space-y-6 text-base text-white/60 font-light leading-relaxed">
               <p>
-                F-Editör sıradan bir giyim markası olarak başlamadı. Yüz binlerce insana ulaşan, ekranlar arkasında yaratılan dijital bir kültürün fiziksel bir yansıması olarak doğdu.
+                VOITÉ. sıradan bir giyim markası olarak tasarlanmadı. Az üretim, yüksek etki felsefesiyle hareket eden bir kolektif.
               </p>
               <p>
-                Video editleri, sinematik vizyonlar ve sokak kültürünün birleştiği o anı yakalıyor ve giyilebilir bir kimliğe dönüştürüyoruz.
+                Her drop, özenle seçilmiş 3–4 parçadan oluşur. Seri üretim yoktur. Her parça kendi başına bir ifade biçimidir.
               </p>
               <p>
-                Amacımız seri üretim yapmak değil; topluluğumuzu yansıtan, yüksek kaliteli, sınırlı sayıda "Drop"lar üreterek her bir parçanın bir sanat eseri veya dijital bir başyapıt gibi değer görmesini sağlamak.
+                Amacımız rafları doldurmak değil — doğru insanın elinde değer kazanan parçalar yaratmak.
               </p>
             </div>
-            
+
             <div className="pt-8 grid grid-cols-2 gap-8 border-t border-white/10">
               <div>
-                <span className="block text-4xl font-mono text-fener-gold mb-2">300K+</span>
-                <span className="uppercase tracking-widest text-xs text-white/50">Topluluk Üyesi</span>
+                <span className="block text-4xl font-mono font-light text-white mb-2">Drop</span>
+                <span className="uppercase tracking-widest text-xs text-white/30">Bazlı Koleksiyon</span>
               </div>
               <div>
-                <span className="block text-4xl font-mono text-fener-gold mb-2">01</span>
-                <span className="uppercase tracking-widest text-xs text-white/50">Aktif Drop</span>
+                <span className="block text-4xl font-mono font-light text-white mb-2">01</span>
+                <span className="uppercase tracking-widest text-xs text-white/30">Aktif Seri</span>
               </div>
             </div>
+
+            <Link href="/drop" className="inline-flex items-center gap-3 text-xs uppercase tracking-[0.25em] text-white/50 hover:text-white transition-colors border-b border-white/20 pb-1">
+              Aktif Drop'u Görüntüle
+            </Link>
           </div>
 
-          <div className="flex-1 relative w-full aspect-[4/5] lg:aspect-square">
-            <div className="absolute inset-0 bg-gradient-to-tr from-fener-gold/20 to-transparent z-10 mix-blend-overlay"></div>
+          {/* Image */}
+          <div className="relative w-full aspect-[4/5] overflow-hidden">
+            <div className="absolute inset-0 bg-gradient-to-t from-black/60 via-transparent to-transparent z-10" />
             <Image
               src="/images/hero.png"
-              alt="F-Editör Vision"
+              alt="VOITÉ. Vision"
               fill
-              className="object-cover object-center grayscale hover:grayscale-0 transition-all duration-1000"
+              className="object-cover object-center grayscale"
             />
           </div>
 

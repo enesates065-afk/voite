@@ -10,21 +10,38 @@ import { db } from "@/lib/firebase";
 interface Product {
   id: string;
   name: string;
-  category: string;
+  category: string;        // product type: hoodie, t-shirt etc
+  seriesSlug?: string;     // e.g. "silent-series"
+  dropNumber?: number;     // e.g. 1
   price: string;
-  stock: number;          // legacy total stock (fallback)
-  sizeStock?: Record<string, number>; // per-size stock
+  stock: number;
+  sizeStock?: Record<string, number>;
   sizes: string[];
   description: string;
   image: string;
   images?: string[];
 }
 
+const PRODUCT_CATEGORIES = [
+  { label: "Hoodie", value: "hoodie" },
+  { label: "Sweatshirt", value: "sweatshirt" },
+  { label: "T-Shirt", value: "t-shirt" },
+  { label: "Pantolon", value: "pantolon" },
+  { label: "Aksesuar", value: "aksesuar" },
+];
+
+const SERIES_OPTIONS = [
+  { label: "Silent Series", slug: "silent-series" },
+  { label: "Void Series", slug: "void-series" },
+];
+
 const DEFAULT_SIZES = ["XS", "S", "M", "L", "XL", "XXL"];
 
 const EMPTY_FORM = {
   name: "",
-  category: "Drop 01",
+  category: "hoodie",
+  seriesSlug: "",
+  dropNumber: "",
   price: "",
   sizes: "S,M,L,XL",
   sizeStock: {} as Record<string, number>,
@@ -99,10 +116,12 @@ export default function AdminProducts() {
       const productData = {
         name: formData.name,
         category: formData.category,
+        seriesSlug: formData.seriesSlug || null,
+        dropNumber: formData.dropNumber ? parseInt(formData.dropNumber) : null,
         price: formData.price,
         sizes,
         sizeStock,
-        stock: totalStk, // keep legacy field in sync
+        stock: totalStk,
         description: formData.description,
         image: formData.images[0] || formData.image || "/images/hoodie.png",
         images: formData.images.length > 0 ? formData.images : [formData.image || "/images/hoodie.png"],
@@ -300,16 +319,39 @@ export default function AdminProducts() {
                     onChange={e => setFormData(f => ({ ...f, name: e.target.value }))}
                     className="w-full bg-white/5 border border-white/10 rounded p-3 text-sm focus:border-white outline-none transition-colors" />
                 </div>
+
+                {/* Product Category (type) */}
                 <div className="col-span-2 md:col-span-1 space-y-2">
-                  <label className="text-[10px] uppercase tracking-[0.2em] text-white/50">Kategori</label>
+                  <label className="text-[10px] uppercase tracking-[0.2em] text-white/50">Ürün Tipi *</label>
                   <select value={formData.category} onChange={e => setFormData(f => ({ ...f, category: e.target.value }))}
                     className="w-full bg-white/5 border border-white/10 rounded p-3 text-sm focus:border-white outline-none appearance-none transition-colors">
-                    <option value="Drop 01">Drop 01</option>
-                    <option value="Temel">Temel Parçalar</option>
-                    <option value="Aksesuar">Aksesuar</option>
-                    <option value="Arşiv">Arşiv</option>
+                    {PRODUCT_CATEGORIES.map(c => (
+                      <option key={c.value} value={c.value}>{c.label}</option>
+                    ))}
                   </select>
                 </div>
+
+                {/* Series */}
+                <div className="col-span-2 md:col-span-1 space-y-2">
+                  <label className="text-[10px] uppercase tracking-[0.2em] text-white/50">Seri</label>
+                  <select value={formData.seriesSlug} onChange={e => setFormData(f => ({ ...f, seriesSlug: e.target.value }))}
+                    className="w-full bg-white/5 border border-white/10 rounded p-3 text-sm focus:border-white outline-none appearance-none transition-colors">
+                    <option value="">Seri yok / Bağımsız</option>
+                    {SERIES_OPTIONS.map(s => (
+                      <option key={s.slug} value={s.slug}>{s.label}</option>
+                    ))}
+                  </select>
+                </div>
+
+                {/* Drop Number */}
+                <div className="col-span-2 md:col-span-1 space-y-2">
+                  <label className="text-[10px] uppercase tracking-[0.2em] text-white/50">Drop No</label>
+                  <input type="number" min="1" value={formData.dropNumber}
+                    onChange={e => setFormData(f => ({ ...f, dropNumber: e.target.value }))}
+                    placeholder="1"
+                    className="w-full bg-white/5 border border-white/10 rounded p-3 text-sm focus:border-white outline-none transition-colors" />
+                </div>
+
                 <div className="col-span-2 md:col-span-1 space-y-2">
                   <label className="text-[10px] uppercase tracking-[0.2em] text-white/50">Fiyat (₺) *</label>
                   <input required type="number" value={formData.price}
