@@ -3,41 +3,28 @@ import { doc, updateDoc } from "firebase/firestore";
 import { db } from "@/lib/firebase";
 import crypto from 'crypto';
 
-const IYZICO_API_KEY = process.env.IYZICO_API_KEY || '';
-const IYZICO_SECRET_KEY = process.env.IYZICO_SECRET_KEY || '';
-const IYZICO_BASE_URL = process.env.IYZICO_BASE_URL || 'https://sandbox-api.iyzipay.com';
+const IYZICO_API_KEY = (process.env.IYZICO_API_KEY || '').trim();
+const IYZICO_SECRET_KEY = (process.env.IYZICO_SECRET_KEY || '').trim();
+const IYZICO_BASE_URL = (process.env.IYZICO_BASE_URL || 'https://sandbox-api.iyzipay.com').trim();
 
-function pkiString(obj: Record<string, any>): string {
-  const parts: string[] = [];
-  for (const key of Object.keys(obj)) {
-    const val = obj[key];
-    if (val === null || val === undefined) continue;
-    if (Array.isArray(val) && val.length > 0) {
-      if (typeof val[0] === 'object') {
-        for (const item of val) {
-          parts.push(`${key}=${pkiString(item)}`);
-        }
-      } else {
-        parts.push(`${key}=[${val.join(',')}]`);
-      }
-    } else if (typeof val === 'object' && !Array.isArray(val)) {
-      parts.push(`${key}=${pkiString(val)}`);
-    } else {
-      parts.push(`${key}=${val}`);
-    }
-  }
-  return `[${parts.join(',')}]`;
-}
+const API_PATH = '/payment/iyzipos/checkoutform/auth/ecom/detail';
 
-function buildAuth(requestObj: Record<string, any>): { authorization: string; randomString: string } {
-  const randomString = Math.random().toString(36).replace(/[^a-z]+/g, '').substring(0, 8);
-  const pki = pkiString(requestObj);
-  const hashStr = IYZICO_API_KEY + randomString + IYZICO_SECRET_KEY + pki;
-  const hash = crypto.createHmac('sha256', IYZICO_SECRET_KEY)
-    .update(hashStr, 'utf8')
-    .digest('base64');
+function buildAuth(body: object, path: string): { authorization: string; randomString: string } {
+  const randomString = `${process.hrtime()[0]}${Math.random().toString(8).slice(2)}`;
+
+  const signature = crypto
+    .createHmac('sha256', IYZICO_SECRET_KEY)
+    .update(randomString + path + JSON.stringify(body))
+    .digest('hex');
+
+  const authParams = [
+    `apiKey:${IYZICO_API_KEY}`,
+    `randomKey:${randomString}`,
+    `signature:${signature}`,
+  ].join('&');
+
   return {
-    authorization: `IYZWS ${IYZICO_API_KEY}:${hash}`,
+    authorization: `IYZWSv2 ${Buffer.from(authParams).toString('base64')}`,
     randomString,
   };
 }
@@ -53,16 +40,16 @@ export async function POST(req: Request): Promise<Response> {
       return NextResponse.redirect(`${SITE_URL}/checkout/error`);
     }
 
-    const requestObj: Record<string, any> = {
+    const requestBody = {
       locale: "tr",
       conversationId: "callback-verify",
       token,
     };
 
-    const { authorization, randomString } = buildAuth(requestObj);
+    const { authorization, randomString } = buildAuth(requestBody, API_PATH);
 
     const iyzicoRes = await fetch(
-      `${IYZICO_BASE_URL}/payment/iyzipos/checkoutform/auth/ecom/detail`,
+      `${IYZICO_BASE_URL}${API_PATH}`,
       {
         method: 'POST',
         headers: {
@@ -70,9 +57,9 @@ export async function POST(req: Request): Promise<Response> {
           'Content-Type': 'application/json',
           'Authorization': authorization,
           'x-iyzi-rnd': randomString,
-          'x-iyzi-client-version': 'iyzipay-node-custom-1.0.0',
+          'x-iyzi-client-version': 'iyzipay-node-2.0.67',
         },
-        body: JSON.stringify(requestObj),
+        body: JSON.stringify(requestBody),
       }
     );
 

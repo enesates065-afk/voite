@@ -8,51 +8,30 @@ const IYZICO_API_KEY = (process.env.IYZICO_API_KEY || '').trim();
 const IYZICO_SECRET_KEY = (process.env.IYZICO_SECRET_KEY || '').trim();
 const IYZICO_BASE_URL = (process.env.IYZICO_BASE_URL || 'https://sandbox-api.iyzipay.com').trim();
 
-/**
- * Exact port of the official iyzipay-node SDK's Pki.requestToString()
- * https://github.com/iyzico/iyzipay-node/blob/master/lib/pki/Pki.js
- */
-function pkiString(obj: Record<string, any>): string {
-  const parts: string[] = [];
-
-  for (const key of Object.keys(obj)) {
-    const val = obj[key];
-    if (val === null || val === undefined) continue;
-
-    if (Array.isArray(val) && val.length > 0) {
-      if (typeof val[0] === 'object') {
-        // Array of objects — each element gets its OWN key entry
-        for (const item of val) {
-          parts.push(`${key}=${pkiString(item)}`);
-        }
-      } else {
-        // Array of primitives e.g. enabledInstallments=[1,2,3]
-        parts.push(`${key}=[${val.join(',')}]`);
-      }
-    } else if (typeof val === 'object' && !Array.isArray(val)) {
-      parts.push(`${key}=${pkiString(val)}`);
-    } else {
-      parts.push(`${key}=${val}`);
-    }
-  }
-
-  return `[${parts.join(',')}]`;
-}
+const API_PATH = '/payment/iyzipos/checkoutform/initialize/auth/ecom';
 
 /**
- * Exact port of the official iyzipay-node SDK's IyziAuth
- * Authorization header: "IYZWS {apiKey}:{base64-hmac-sha256}"
- * x-iyzi-rnd header: the random string used in the hash
+ * IYZWSv2 auth — exact port of iyzipay-node v2 SDK (utils.js generateHashV2)
+ *   signature = HMAC-SHA256-hex(secretKey, randomString + apiPath + JSON.stringify(body))
+ *   authParams = "apiKey:KEY&randomKey:RANDOM&signature:HEX"
+ *   header = "IYZWSv2 " + base64(authParams)
  */
-function buildAuth(requestObj: Record<string, any>): { authorization: string; randomString: string } {
-  const randomString = Math.random().toString(36).replace(/[^a-z]+/g, '').substring(0, 8);
-  const pki = pkiString(requestObj);
-  const hashStr = IYZICO_API_KEY + randomString + IYZICO_SECRET_KEY + pki;
-  const hash = crypto.createHmac('sha256', IYZICO_SECRET_KEY)
-    .update(hashStr, 'utf8')
-    .digest('base64');
+function buildAuth(body: object, path: string): { authorization: string; randomString: string } {
+  const randomString = `${process.hrtime()[0]}${Math.random().toString(8).slice(2)}`;
+
+  const signature = crypto
+    .createHmac('sha256', IYZICO_SECRET_KEY)
+    .update(randomString + path + JSON.stringify(body))
+    .digest('hex');
+
+  const authParams = [
+    `apiKey:${IYZICO_API_KEY}`,
+    `randomKey:${randomString}`,
+    `signature:${signature}`,
+  ].join('&');
+
   return {
-    authorization: `IYZWS ${IYZICO_API_KEY}:${hash}`,
+    authorization: `IYZWSv2 ${Buffer.from(authParams).toString('base64')}`,
     randomString,
   };
 }
@@ -95,7 +74,7 @@ export async function POST(req: Request): Promise<Response> {
 
     const price = Number(total).toFixed(2);
 
-    const requestObj: Record<string, any> = {
+    const requestBody = {
       locale: "tr",
       conversationId: orderRef.id,
       price,
@@ -143,20 +122,10 @@ export async function POST(req: Request): Promise<Response> {
       }))
     };
 
-    const { authorization, randomString } = buildAuth(requestObj);
-
-    // Debug log - will appear in Vercel logs
-    console.log("=== IYZICO DEBUG ===");
-    console.log("API Key length:", IYZICO_API_KEY.length, "starts with:", IYZICO_API_KEY.substring(0, 10));
-    console.log("Secret Key length:", IYZICO_SECRET_KEY.length);
-    console.log("Base URL:", IYZICO_BASE_URL);
-    console.log("PKI:", JSON.stringify(pkiString(requestObj)).substring(0, 200));
-    console.log("Auth header:", authorization.substring(0, 50) + "...");
-    console.log("Random string:", randomString);
-    console.log("====================");
+    const { authorization, randomString } = buildAuth(requestBody, API_PATH);
 
     const iyzicoRes = await fetch(
-      `${IYZICO_BASE_URL}/payment/iyzipos/checkoutform/initialize/auth/ecom`,
+      `${IYZICO_BASE_URL}${API_PATH}`,
       {
         method: 'POST',
         headers: {
@@ -164,9 +133,9 @@ export async function POST(req: Request): Promise<Response> {
           'Content-Type': 'application/json',
           'Authorization': authorization,
           'x-iyzi-rnd': randomString,
-          'x-iyzi-client-version': 'iyzipay-node-custom-1.0.0',
+          'x-iyzi-client-version': 'iyzipay-node-2.0.67',
         },
-        body: JSON.stringify(requestObj),
+        body: JSON.stringify(requestBody),
       }
     );
 
