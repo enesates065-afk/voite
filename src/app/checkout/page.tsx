@@ -52,12 +52,12 @@ export default function CheckoutPage() {
 
   if (success) {
     return (
-      <div className="min-h-screen bg-fener-black pt-32 pb-24 flex items-center justify-center">
+      <div className="min-h-screen bg-voite-black pt-32 pb-24 flex items-center justify-center">
         <div className="text-center max-w-md p-8 bg-[#0a0a0a] border border-white/10 rounded">
           <CheckCircle2 size={64} className="text-green-500 mx-auto mb-6" />
           <h1 className="text-3xl font-black uppercase heading-style mb-4">Sipariş Alındı</h1>
           <p className="text-white/60 mb-8">Siparişiniz başarıyla oluşturuldu. En kısa sürede kargoya verilecektir.</p>
-          <Link href="/" className="px-8 py-4 bg-fener-gold text-black font-bold uppercase tracking-widest hover:bg-white transition-colors inline-block">
+          <Link href="/" className="px-8 py-4 bg-white text-black font-bold uppercase tracking-widest hover:bg-white/80 transition-colors inline-block">
             Ana Sayfaya Dön
           </Link>
         </div>
@@ -67,11 +67,11 @@ export default function CheckoutPage() {
 
   if (items.length === 0) {
     return (
-      <div className="min-h-screen bg-fener-black pt-32 pb-24 flex items-center justify-center">
+      <div className="min-h-screen bg-voite-black pt-32 pb-24 flex items-center justify-center">
         <div className="text-center">
           <ShoppingBag size={64} className="text-white/10 mx-auto mb-6" />
           <h1 className="text-2xl font-black uppercase heading-style mb-4 text-white/50">Sepetiniz Boş</h1>
-          <Link href="/" className="text-fener-gold hover:underline font-bold uppercase tracking-widest text-sm">
+          <Link href="/" className="text-white hover:text-white/70 hover:underline font-bold uppercase tracking-widest text-sm">
             Alışverişe Başla
           </Link>
         </div>
@@ -80,7 +80,7 @@ export default function CheckoutPage() {
   }
 
   return (
-    <div className="min-h-screen bg-fener-black pt-32 pb-24">
+    <div className="min-h-screen bg-voite-black pt-32 pb-24">
       <div className="container mx-auto px-6 max-w-6xl">
         <h1 className="text-4xl font-black uppercase heading-style mb-12">Ödeme Adımı</h1>
 
@@ -92,21 +92,21 @@ export default function CheckoutPage() {
             <form onSubmit={handleSubmit} className="space-y-6">
               <div>
                 <label className="block text-xs uppercase tracking-widest text-white/50 font-bold mb-2">Ad Soyad</label>
-                <input required type="text" value={formData.name} onChange={e => setFormData({...formData, name: e.target.value})} className="w-full bg-white/5 border border-white/10 rounded p-4 text-sm focus:border-fener-gold outline-none" />
+                <input required type="text" value={formData.name} onChange={e => setFormData({...formData, name: e.target.value})} className="w-full bg-white/5 border border-white/10 rounded p-4 text-sm focus:border-white outline-none" />
               </div>
               <div>
                 <label className="block text-xs uppercase tracking-widest text-white/50 font-bold mb-2">E-posta</label>
-                <input required type="email" value={formData.email} onChange={e => setFormData({...formData, email: e.target.value})} className="w-full bg-white/5 border border-white/10 rounded p-4 text-sm focus:border-fener-gold outline-none" />
+                <input required type="email" value={formData.email} onChange={e => setFormData({...formData, email: e.target.value})} className="w-full bg-white/5 border border-white/10 rounded p-4 text-sm focus:border-white outline-none" />
               </div>
               <div>
                 <label className="block text-xs uppercase tracking-widest text-white/50 font-bold mb-2">Adres</label>
-                <textarea required rows={4} value={formData.address} onChange={e => setFormData({...formData, address: e.target.value})} className="w-full bg-white/5 border border-white/10 rounded p-4 text-sm focus:border-fener-gold outline-none" />
+                <textarea required rows={4} value={formData.address} onChange={e => setFormData({...formData, address: e.target.value})} className="w-full bg-white/5 border border-white/10 rounded p-4 text-sm focus:border-white outline-none" />
               </div>
               
               <button 
                 type="submit" 
                 disabled={loading}
-                className="w-full py-5 mt-8 bg-fener-gold text-fener-black font-bold uppercase tracking-widest hover:bg-white transition-colors flex justify-center items-center gap-2"
+                className="w-full py-5 mt-8 bg-white text-black font-bold uppercase tracking-widest hover:bg-white/80 transition-colors flex justify-center items-center gap-2"
               >
                 {loading ? <Loader2 size={20} className="animate-spin" /> : "Siparişi Tamamla"}
               </button>
@@ -146,7 +146,7 @@ export default function CheckoutPage() {
 
               <div className="border-t border-white/10 pt-4 flex justify-between items-center">
                 <span className="font-bold uppercase tracking-widest">Toplam</span>
-                <span className="font-mono text-2xl text-fener-gold font-bold">${getCartTotal()}</span>
+                <span className="font-mono text-2xl text-white font-bold">${getCartTotal()}</span>
               </div>
             </div>
           </div>

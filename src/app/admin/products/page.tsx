@@ -1,9 +1,9 @@
 "use client";
 
 import { useState, useEffect } from "react";
-import { Plus, Trash2, X, Loader2 } from "lucide-react";
+import { Plus, Trash2, X, Loader2, Edit2 } from "lucide-react";
 import Image from "next/image";
-import { collection, getDocs, addDoc, deleteDoc, doc } from "firebase/firestore";
+import { collection, getDocs, addDoc, deleteDoc, doc, updateDoc } from "firebase/firestore";
 import { db } from "@/lib/firebase";
 
 interface Product {
@@ -22,6 +22,7 @@ export default function AdminProducts() {
   const [loading, setLoading] = useState(true);
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [uploading, setUploading] = useState(false);
+  const [editingId, setEditingId] = useState<string | null>(null);
 
   // Form states
   const [formData, setFormData] = useState({
@@ -63,12 +64,12 @@ export default function AdminProducts() {
     }
   };
 
-  const handleAddProduct = async (e: React.FormEvent) => {
+  const handleSubmitProduct = async (e: React.FormEvent) => {
     e.preventDefault();
     setUploading(true);
 
     try {
-      const newProduct = {
+      const productData = {
         name: formData.name,
         category: formData.category,
         price: formData.price,
@@ -76,20 +77,46 @@ export default function AdminProducts() {
         sizes: formData.sizes.split(",").map(s => s.trim()),
         description: formData.description,
         image: formData.image || "/images/hoodie.png",
-        createdAt: new Date()
       };
 
-      const docRef = await addDoc(collection(db, "products"), newProduct);
-      setProducts([...products, { id: docRef.id, ...newProduct }]);
+      if (editingId) {
+        // Update existing product
+        await updateDoc(doc(db, "products", editingId), productData);
+        setProducts(products.map(p => p.id === editingId ? { ...p, ...productData } as Product : p));
+      } else {
+        // Add new product
+        const newProduct = { ...productData, createdAt: new Date() };
+        const docRef = await addDoc(collection(db, "products"), newProduct);
+        setProducts([...products, { id: docRef.id, ...newProduct } as Product]);
+      }
       
-      setIsModalOpen(false);
-      setFormData({ name: "", category: "Drop 01", price: "", stock: "0", sizes: "S,M,L,XL", description: "", image: "" });
+      handleCloseModal();
     } catch (error) {
-      console.error("Error adding product:", error);
-      alert("Ürün eklenirken bir hata oluştu.");
+      console.error("Error saving product:", error);
+      alert("Ürün kaydedilirken bir hata oluştu.");
     } finally {
       setUploading(false);
     }
+  };
+
+  const handleEditClick = (product: Product) => {
+    setFormData({
+      name: product.name,
+      category: product.category || "Drop 01",
+      price: product.price,
+      stock: product.stock.toString(),
+      sizes: product.sizes.join(", "),
+      description: product.description || "",
+      image: product.image || "",
+    });
+    setEditingId(product.id);
+    setIsModalOpen(true);
+  };
+
+  const handleCloseModal = () => {
+    setIsModalOpen(false);
+    setEditingId(null);
+    setFormData({ name: "", category: "Drop 01", price: "", stock: "0", sizes: "S,M,L,XL", description: "", image: "" });
   };
 
   const getStatus = (stock: number) => {
@@ -107,7 +134,11 @@ export default function AdminProducts() {
         </div>
         
         <button 
-          onClick={() => setIsModalOpen(true)}
+          onClick={() => {
+            setEditingId(null);
+            setFormData({ name: "", category: "Drop 01", price: "", stock: "0", sizes: "S,M,L,XL", description: "", image: "" });
+            setIsModalOpen(true);
+          }}
           className="flex items-center gap-2 px-4 py-2 bg-white text-black text-[10px] font-light uppercase tracking-[0.2em] rounded hover:bg-white/80 transition-colors"
         >
           <Plus size={16} /> Yeni Ürün Ekle
@@ -163,6 +194,9 @@ export default function AdminProducts() {
                         </td>
                         <td className="px-6 py-4 text-right">
                           <div className="flex items-center justify-end gap-2">
+                            <button className="p-2 text-white/50 hover:text-white transition-colors" onClick={() => handleEditClick(product)}>
+                              <Edit2 size={16} />
+                            </button>
                             <button className="p-2 text-white/50 hover:text-red-500 transition-colors" onClick={() => handleDelete(product.id)}>
                               <Trash2 size={16} />
                             </button>
@@ -183,11 +217,11 @@ export default function AdminProducts() {
         <div className="fixed inset-0 bg-black/80 backdrop-blur-sm z-50 flex items-center justify-center p-4">
           <div className="bg-[#0a0a0a] border border-white/10 rounded w-full max-w-2xl max-h-[90vh] overflow-y-auto hide-scrollbar">
             <div className="flex justify-between items-center p-6 border-b border-white/10">
-              <h2 className="text-xl font-bold uppercase tracking-widest heading-style">Yeni Ürün Ekle</h2>
-              <button onClick={() => setIsModalOpen(false)} className="text-white/50 hover:text-white"><X size={24} /></button>
+              <h2 className="text-xl font-bold uppercase tracking-widest heading-style">{editingId ? 'Ürünü Düzenle' : 'Yeni Ürün Ekle'}</h2>
+              <button onClick={handleCloseModal} className="text-white/50 hover:text-white"><X size={24} /></button>
             </div>
             
-            <form onSubmit={handleAddProduct} className="p-6 space-y-6">
+            <form onSubmit={handleSubmitProduct} className="p-6 space-y-6">
               <div className="grid grid-cols-2 gap-6">
                 <div className="col-span-2 md:col-span-1 space-y-2">
                   <label className="text-[10px] uppercase tracking-[0.2em] text-white/50 font-light">Ürün Adı</label>
@@ -231,10 +265,10 @@ export default function AdminProducts() {
               </div>
 
               <div className="pt-6 border-t border-white/10 flex justify-end gap-4">
-                <button type="button" onClick={() => setIsModalOpen(false)} className="px-6 py-3 uppercase tracking-[0.2em] text-[10px] font-light text-white/50 hover:text-white transition-colors">İptal</button>
+                <button type="button" onClick={handleCloseModal} className="px-6 py-3 uppercase tracking-[0.2em] text-[10px] font-light text-white/50 hover:text-white transition-colors">İptal</button>
                 <button type="submit" disabled={uploading} className="px-6 py-3 bg-white text-black uppercase tracking-[0.2em] text-[10px] font-light hover:bg-white/80 transition-colors flex items-center gap-2">
                   {uploading ? <Loader2 size={16} className="animate-spin" /> : <Plus size={16} />}
-                  {uploading ? 'Kaydediliyor...' : 'Ürünü Ekle'}
+                  {uploading ? 'Kaydediliyor...' : (editingId ? 'Güncelle' : 'Ürünü Ekle')}
                 </button>
               </div>
             </form>

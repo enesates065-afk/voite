@@ -73,7 +73,7 @@ export default function AdminOrders() {
             <input 
               type="text" 
               placeholder="Sipariş Ara..." 
-              className="w-full bg-[#0a0a0a] border border-white/10 text-sm py-2 pl-9 pr-4 rounded text-white focus:outline-none focus:border-fener-gold transition-colors"
+              className="w-full bg-[#0a0a0a] border border-white/10 text-sm py-2 pl-9 pr-4 rounded text-white focus:outline-none focus:border-white transition-colors"
             />
           </div>
         </div>
@@ -82,7 +82,7 @@ export default function AdminOrders() {
       <div className="bg-[#0a0a0a] border border-white/10 rounded overflow-hidden min-h-[400px]">
         {loading ? (
           <div className="flex justify-center items-center h-64">
-            <Loader2 className="animate-spin text-fener-gold" size={32} />
+            <Loader2 className="animate-spin text-white" size={32} />
           </div>
         ) : (
           <div className="overflow-x-auto">
@@ -105,7 +105,7 @@ export default function AdminOrders() {
                 ) : (
                   orders.map((order) => (
                     <tr key={order.id} className="hover:bg-white/5 transition-colors">
-                      <td className="px-6 py-4 font-mono font-bold text-fener-gold">{order.id.slice(0, 8)}...</td>
+                      <td className="px-6 py-4 font-mono font-bold text-white">{order.id.slice(0, 8)}...</td>
                       <td className="px-6 py-4 text-white/80">{order.customerName}</td>
                       <td className="px-6 py-4 text-white/50">{order.date}</td>
                       <td className="px-6 py-4 font-mono">${order.total}</td>

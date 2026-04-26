@@ -40,8 +40,8 @@ export default function Footer() {
             <h4 className="text-white font-bold mb-6 tracking-widest uppercase text-sm heading-style">Alışveriş</h4>
             <ul className="space-y-4 text-white/50">
               <li><Link href="/drop" className="hover:text-white transition-colors">Son Drop</Link></li>
-              <li><Link href="/essentials" className="hover:text-white transition-colors">Temel Parçalar</Link></li>
-              <li><Link href="/archive" className="hover:text-white transition-colors">Arşiv</Link></li>
+              <li><Link href="/temel-parcalar" className="hover:text-white transition-colors">Temel Parçalar</Link></li>
+              <li><Link href="/arsiv" className="hover:text-white transition-colors">Arşiv</Link></li>
             </ul>
           </div>
 
