@@ -1,95 +1,278 @@
 "use client";
 
-import { useState, useEffect } from "react";
-import { motion } from "framer-motion";
+import { useState, useEffect, useRef } from "react";
 import Link from "next/link";
+import Image from "next/image";
+import { motion, AnimatePresence } from "framer-motion";
+import { collection, getDocs, query, where } from "firebase/firestore";
+import { db } from "@/lib/firebase";
+import { ChevronLeft, ChevronRight } from "lucide-react";
 
-export default function DropSystem() {
-  // Set target date for the drop (e.g., 72 hours from now)
-  const [timeLeft, setTimeLeft] = useState({
-    hours: 71,
-    minutes: 59,
-    seconds: 59
-  });
+const SERIES_LABEL: Record<string, string> = {
+  "silent-series": "Silent Series",
+  "void-series": "Void Series",
+};
+
+interface Drop {
+  id: string;
+  seriesSlug: string;
+  seriesName: string;
+  dropNumber: number;
+  description: string;
+  active: boolean;
+  archived: boolean;
+  endDate?: any;
+}
+
+interface Product {
+  id: string;
+  name: string;
+  price: string;
+  image: string;
+  stock: number;
+  sizeStock?: Record<string, number>;
+  category: string;
+}
+
+function useCountdown(endDate?: Date) {
+  const [time, setTime] = useState({ h: 71, m: 59, s: 59 });
 
   useEffect(() => {
-    const timer = setInterval(() => {
-      setTimeLeft(prev => {
-        if (prev.seconds > 0) {
-          return { ...prev, seconds: prev.seconds - 1 };
-        } else if (prev.minutes > 0) {
-          return { ...prev, minutes: prev.minutes - 1, seconds: 59 };
-        } else if (prev.hours > 0) {
-          return { hours: prev.hours - 1, minutes: 59, seconds: 59 };
-        }
-        return prev;
-      });
-    }, 1000);
-    
-    return () => clearInterval(timer);
-  }, []);
+    const tick = () => {
+      const now = Date.now();
+      const target = endDate ? endDate.getTime() : now + 72 * 3600 * 1000;
+      const diff = Math.max(0, target - now);
+      const h = Math.floor(diff / 3600000);
+      const m = Math.floor((diff % 3600000) / 60000);
+      const s = Math.floor((diff % 60000) / 1000);
+      setTime({ h, m, s });
+    };
+    tick();
+    const id = setInterval(tick, 1000);
+    return () => clearInterval(id);
+  }, [endDate]);
 
-  const formatNumber = (num: number) => num.toString().padStart(2, '0');
+  return time;
+}
+
+function DropSlide({ drop, products }: { drop: Drop; products: Product[] }) {
+  const countdown = useCountdown(drop.endDate?.toDate?.());
+  const fmt = (n: number) => String(n).padStart(2, "0");
+  const seriesLabel = SERIES_LABEL[drop.seriesSlug] || drop.seriesName || drop.seriesSlug;
 
   return (
-    <section className="py-24 bg-[#050505] relative border-y border-white/5">
-      {/* Decorative lines */}
-      <div className="absolute top-0 left-10 w-[1px] h-full bg-white/5 hidden md:block"></div>
-      <div className="absolute top-0 right-10 w-[1px] h-full bg-white/5 hidden md:block"></div>
-
-      <div className="container mx-auto px-6 relative z-10">
-        <div className="flex flex-col md:flex-row items-center justify-between gap-12">
-          
-          <div className="flex-1 space-y-6 text-center md:text-left">
-            <div className="inline-block border border-fener-gold/30 px-4 py-1 text-fener-gold uppercase tracking-[0.2em] text-xs font-bold mb-2">
-              Şimdi Yayında
+    <div className="min-h-[80vh] flex flex-col">
+      {/* Drop Header */}
+      <div className="border-b border-white/5 py-10 px-6 md:px-12">
+        <div className="max-w-6xl mx-auto flex flex-col md:flex-row md:items-end justify-between gap-6">
+          <div>
+            <p className="text-[9px] uppercase tracking-[0.5em] text-white/20 mb-3 font-light">
+              {seriesLabel}
+            </p>
+            <div className="flex items-center gap-4 mb-2">
+              <span className="text-[9px] uppercase tracking-[0.3em] text-white font-bold bg-white/10 px-3 py-1.5">
+                Şimdi Yayında
+              </span>
             </div>
-            <h2 className="text-5xl md:text-7xl font-black heading-style uppercase tracking-tighter">
-              Drop <span className="text-transparent bg-clip-text bg-gradient-to-r from-white to-white/50">01</span>
+            <h2 className="text-6xl md:text-8xl font-light heading-style uppercase tracking-tighter text-white">
+              Drop <span className="text-white/30">{String(drop.dropNumber).padStart(2, "0")}</span>
             </h2>
-            <p className="text-xl text-white/60 font-light">72 saat boyunca yayında. Tükendiğinde sonsuza dek arşivlenecek.</p>
-            
-            <div className="pt-6">
-              <Link 
-                href="/drop" 
-                className="inline-block px-10 py-4 bg-white text-fener-black font-bold uppercase tracking-widest hover:bg-fener-gold transition-colors duration-300"
-              >
-                Drop'a Eriş
-              </Link>
-            </div>
+            {drop.description && (
+              <p className="text-white/30 text-sm font-light mt-3 max-w-md">{drop.description}</p>
+            )}
           </div>
 
-          <motion.div 
-            initial={{ opacity: 0, scale: 0.9 }}
-            whileInView={{ opacity: 1, scale: 1 }}
-            viewport={{ once: true }}
-            className="flex-1 w-full max-w-md bg-[#0a0a0a] border border-white/10 p-8 flex flex-col items-center justify-center gap-6 box-glow relative overflow-hidden"
-          >
-            {/* Inner subtle glow */}
-            <div className="absolute inset-0 bg-gradient-to-br from-fener-gold/5 to-transparent pointer-events-none"></div>
-
-            <span className="text-sm uppercase tracking-[0.3em] text-white/50 font-bold z-10">Kalan Zaman</span>
-            
-            <div className="flex gap-4 md:gap-8 z-10">
-              <div className="flex flex-col items-center">
-                <span className="text-5xl md:text-6xl font-mono font-light tracking-tighter">{formatNumber(timeLeft.hours)}</span>
-                <span className="text-xs uppercase tracking-widest text-fener-gold mt-2">Saat</span>
-              </div>
-              <span className="text-4xl font-light text-white/20 mt-2">:</span>
-              <div className="flex flex-col items-center">
-                <span className="text-5xl md:text-6xl font-mono font-light tracking-tighter">{formatNumber(timeLeft.minutes)}</span>
-                <span className="text-xs uppercase tracking-widest text-fener-gold mt-2">Dak</span>
-              </div>
-              <span className="text-4xl font-light text-white/20 mt-2">:</span>
-              <div className="flex flex-col items-center">
-                <span className="text-5xl md:text-6xl font-mono font-light tracking-tighter">{formatNumber(timeLeft.seconds)}</span>
-                <span className="text-xs uppercase tracking-widest text-fener-gold mt-2">San</span>
-              </div>
+          {/* Countdown */}
+          <div className="bg-[#0a0a0a] border border-white/10 px-8 py-6 flex items-center gap-6">
+            <span className="text-[9px] uppercase tracking-[0.3em] text-white/25 writing-mode-vertical hidden md:block">Kalan Zaman</span>
+            <div className="flex gap-4">
+              {[{ v: countdown.h, l: "SAAT" }, { v: countdown.m, l: "DAK" }, { v: countdown.s, l: "SAN" }].map((t, i) => (
+                <div key={i} className="flex flex-col items-center">
+                  {i > 0 && <span className="absolute text-white/20 text-2xl mt-1 -ml-6">:</span>}
+                  <span className="text-4xl md:text-5xl font-mono font-light tabular-nums text-white">
+                    {fmt(t.v)}
+                  </span>
+                  <span className="text-[8px] uppercase tracking-widest text-white/25 mt-1">{t.l}</span>
+                </div>
+              ))}
             </div>
-          </motion.div>
-
+          </div>
         </div>
       </div>
-    </section>
+
+      {/* Products Grid */}
+      <div className="flex-1 px-6 md:px-12 py-12">
+        <div className="max-w-6xl mx-auto">
+          {products.length === 0 ? (
+            <div className="text-center py-24">
+              <p className="text-white/15 uppercase tracking-widest text-sm">Ürünler yakında eklenecek</p>
+            </div>
+          ) : (
+            <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4 md:gap-6">
+              {products.map(product => {
+                const totalStock = product.sizeStock
+                  ? Object.values(product.sizeStock).reduce((a, b) => a + b, 0)
+                  : product.stock || 0;
+                return (
+                  <Link key={product.id} href={`/product/${product.id}`} className="group">
+                    <div className="relative aspect-[3/4] overflow-hidden bg-[#0a0a0a] mb-3">
+                      <Image
+                        src={product.image || "/images/hoodie.png"}
+                        alt={product.name}
+                        fill
+                        className="object-cover grayscale group-hover:grayscale-0 transition-all duration-700"
+                      />
+                      {totalStock === 0 && (
+                        <div className="absolute inset-0 bg-black/70 flex items-center justify-center">
+                          <span className="text-[9px] uppercase tracking-widest text-white/40">Tükendi</span>
+                        </div>
+                      )}
+                      {totalStock > 0 && totalStock <= 5 && (
+                        <div className="absolute bottom-3 left-3 bg-black/80 px-2 py-1">
+                          <span className="text-[8px] uppercase tracking-widest text-yellow-400">Son {totalStock}</span>
+                        </div>
+                      )}
+                    </div>
+                    <p className="text-xs uppercase tracking-[0.1em] text-white/60 group-hover:text-white transition-colors font-light">
+                      {product.name}
+                    </p>
+                    <p className="text-xs font-mono text-white/35 mt-0.5">₺{product.price}</p>
+                  </Link>
+                );
+              })}
+            </div>
+          )}
+
+          <div className="mt-10">
+            <Link
+              href={`/seriler/${drop.seriesSlug}/drop-${drop.dropNumber}`}
+              className="text-[10px] uppercase tracking-[0.3em] text-white/30 hover:text-white transition-colors border-b border-white/15 pb-1"
+            >
+              Tüm Drop Detayları →
+            </Link>
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+export default function DropPageClient() {
+  const [drops, setDrops] = useState<Drop[]>([]);
+  const [productsByDrop, setProductsByDrop] = useState<Record<string, Product[]>>({});
+  const [current, setCurrent] = useState(0);
+  const [loading, setLoading] = useState(true);
+  const [dir, setDir] = useState(0); // -1 left, 1 right
+
+  useEffect(() => {
+    const fetchData = async () => {
+      try {
+        // Active drops (not archived)
+        const dropQ = query(collection(db, "drops"), where("active", "==", true), where("archived", "==", false));
+        const dropSnap = await getDocs(dropQ);
+        const dropData: Drop[] = dropSnap.docs
+          .map(d => ({ id: d.id, ...d.data() } as Drop))
+          .sort((a, b) => a.dropNumber - b.dropNumber);
+        setDrops(dropData);
+
+        // Products for each drop
+        const prodMap: Record<string, Product[]> = {};
+        await Promise.all(dropData.map(async drop => {
+          const pQ = query(
+            collection(db, "products"),
+            where("seriesSlug", "==", drop.seriesSlug),
+            where("dropNumber", "==", drop.dropNumber)
+          );
+          const pSnap = await getDocs(pQ);
+          prodMap[drop.id] = pSnap.docs.map(d => ({ id: d.id, ...d.data() } as Product));
+        }));
+        setProductsByDrop(prodMap);
+      } catch (e) {
+        console.error(e);
+      } finally {
+        setLoading(false);
+      }
+    };
+    fetchData();
+  }, []);
+
+  const go = (direction: number) => {
+    setDir(direction);
+    setCurrent(c => Math.max(0, Math.min(drops.length - 1, c + direction)));
+  };
+
+  if (loading) return (
+    <div className="min-h-screen bg-voite-black flex items-center justify-center">
+      <div className="space-y-2 text-center">
+        <div className="w-8 h-px bg-white/20 mx-auto animate-pulse" />
+        <p className="text-white/20 text-xs uppercase tracking-widest">Yükleniyor</p>
+      </div>
+    </div>
+  );
+
+  if (drops.length === 0) return (
+    <div className="min-h-screen bg-voite-black flex items-center justify-center">
+      <div className="text-center">
+        <p className="text-white/15 text-xs uppercase tracking-[0.4em] mb-3">Aktif Drop</p>
+        <p className="text-white/30 text-3xl font-light heading-style uppercase tracking-tight">Yakında</p>
+        <p className="text-white/15 text-sm mt-4 font-light">Yeni drop duyurusu için takipte kalın.</p>
+      </div>
+    </div>
+  );
+
+  const activeDrop = drops[current];
+  const activeProducts = productsByDrop[activeDrop?.id] || [];
+
+  return (
+    <div className="min-h-screen bg-voite-black pt-24 relative overflow-hidden">
+      
+      {/* Slide Area */}
+      <AnimatePresence mode="wait" custom={dir}>
+        <motion.div
+          key={activeDrop.id}
+          custom={dir}
+          initial={{ opacity: 0, x: dir * 60 }}
+          animate={{ opacity: 1, x: 0 }}
+          exit={{ opacity: 0, x: -dir * 60 }}
+          transition={{ duration: 0.4, ease: "easeInOut" }}
+        >
+          <DropSlide drop={activeDrop} products={activeProducts} />
+        </motion.div>
+      </AnimatePresence>
+
+      {/* Navigation (only if multiple drops) */}
+      {drops.length > 1 && (
+        <div className="fixed bottom-8 left-1/2 -translate-x-1/2 flex items-center gap-6 bg-black/60 backdrop-blur border border-white/10 px-6 py-3 rounded z-50">
+          <button
+            onClick={() => go(-1)}
+            disabled={current === 0}
+            className="text-white/40 hover:text-white transition-colors disabled:opacity-20 disabled:cursor-not-allowed"
+          >
+            <ChevronLeft size={18} />
+          </button>
+
+          <div className="flex gap-2 items-center">
+            {drops.map((d, i) => (
+              <button key={d.id} onClick={() => { setDir(i > current ? 1 : -1); setCurrent(i); }}
+                className={`transition-all duration-300 ${i === current ? "w-6 h-1.5 bg-white rounded-full" : "w-1.5 h-1.5 bg-white/20 rounded-full hover:bg-white/40"}`}
+              />
+            ))}
+          </div>
+
+          <button
+            onClick={() => go(1)}
+            disabled={current === drops.length - 1}
+            className="text-white/40 hover:text-white transition-colors disabled:opacity-20 disabled:cursor-not-allowed"
+          >
+            <ChevronRight size={18} />
+          </button>
+
+          <div className="w-px h-4 bg-white/10" />
+          <span className="text-[9px] text-white/30 uppercase tracking-widest font-mono">
+            {current + 1} / {drops.length}
+          </span>
+        </div>
+      )}
+    </div>
   );
 }
