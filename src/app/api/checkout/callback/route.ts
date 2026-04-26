@@ -7,38 +7,38 @@ const IYZICO_API_KEY = process.env.IYZICO_API_KEY || '';
 const IYZICO_SECRET_KEY = process.env.IYZICO_SECRET_KEY || '';
 const IYZICO_BASE_URL = process.env.IYZICO_BASE_URL || 'https://sandbox-api.iyzipay.com';
 
-function toPkiString(obj: any): string {
-  if (obj === null || obj === undefined) return '';
-  if (typeof obj !== 'object') return String(obj);
-  if (Array.isArray(obj)) {
-    return obj.map((item) => `[${toPkiString(item)}]`).join(',');
+function toPkiString(obj: Record<string, any>): string {
+  const parts: string[] = [];
+  for (const key of Object.keys(obj)) {
+    const val = obj[key];
+    if (val === null || val === undefined) continue;
+    if (Array.isArray(val)) {
+      if (val.length === 0) continue;
+      if (typeof val[0] === 'object') {
+        const inner = val.map((item) => `[${toPkiString(item)}]`).join(', ');
+        parts.push(`${key}=[${inner}]`);
+      } else {
+        parts.push(`${key}=[${val.join(', ')}]`);
+      }
+    } else if (typeof val === 'object') {
+      parts.push(`${key}=[${toPkiString(val)}]`);
+    } else {
+      parts.push(`${key}=${val}`);
+    }
   }
-  return Object.keys(obj)
-    .map((key) => {
-      const val = obj[key];
-      if (val === null || val === undefined) return '';
-      if (Array.isArray(val)) {
-        return val.map((item) => `${key}=[${toPkiString(item)}]`).join(',');
-      }
-      if (typeof val === 'object') {
-        return `${key}=[${toPkiString(val)}]`;
-      }
-      return `${key}=${val}`;
-    })
-    .filter(Boolean)
-    .join(',');
+  return parts.join(', ');
 }
 
-function generateAuthHeader(requestObj: any): { authorization: string; randomKey: string } {
-  const randomKey = Math.random().toString(36).substring(2) + Math.random().toString(36).substring(2);
+function generateAuth(requestObj: Record<string, any>): { authorization: string; randomKey: string } {
+  const randomKey = crypto.randomBytes(16).toString('hex');
   const pkiString = `[${toPkiString(requestObj)}]`;
   const hashStr = IYZICO_API_KEY + randomKey + IYZICO_SECRET_KEY + pkiString;
   const signature = crypto.createHmac('sha256', IYZICO_SECRET_KEY)
-    .update(hashStr)
+    .update(hashStr, 'utf8')
     .digest('base64');
   return {
     authorization: `IYZWS apiKey=${IYZICO_API_KEY}&randomKey=${randomKey}&signature=${signature}`,
-    randomKey
+    randomKey,
   };
 }
 
@@ -53,45 +53,45 @@ export async function POST(req: Request): Promise<Response> {
       return NextResponse.redirect(`${SITE_URL}/checkout/error`);
     }
 
-    const requestObj = {
+    const requestObj: Record<string, any> = {
       locale: "tr",
-      conversationId: "callback-check",
-      token
+      conversationId: "callback-verify",
+      token,
     };
 
-    const { authorization, randomKey } = generateAuthHeader(requestObj);
+    const { authorization, randomKey } = generateAuth(requestObj);
 
-    const iyzicoRes = await fetch(`${IYZICO_BASE_URL}/payment/iyzipos/checkoutform/auth/ecom/detail`, {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-        'Authorization': authorization,
-        'x-iyzi-rnd': randomKey,
-      },
-      body: JSON.stringify(requestObj),
-    });
+    const iyzicoRes = await fetch(
+      `${IYZICO_BASE_URL}/payment/iyzipos/checkoutform/auth/ecom/detail`,
+      {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': authorization,
+          'x-iyzi-rnd': randomKey,
+        },
+        body: JSON.stringify(requestObj),
+      }
+    );
 
     const result = await iyzicoRes.json();
     console.log("Callback result:", JSON.stringify(result));
 
     if (result.status !== "success" || result.paymentStatus !== "SUCCESS") {
-      console.error("Iyzico Callback Error:", result);
       return NextResponse.redirect(`${SITE_URL}/checkout/error`);
     }
 
     const orderId = result.conversationId;
-
-    if (orderId && orderId !== "callback-check") {
+    if (orderId && orderId !== "callback-verify") {
       try {
-        const orderRef = doc(db, "orders", orderId);
-        await updateDoc(orderRef, {
+        await updateDoc(doc(db, "orders", orderId), {
           status: "Ödendi",
           paymentStatus: "Success",
           paymentId: result.paymentId,
           updatedAt: new Date()
         });
       } catch (dbError) {
-        console.error("Error updating order in Firestore:", dbError);
+        console.error("Firestore update error:", dbError);
       }
     }
 
