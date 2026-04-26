@@ -205,7 +205,17 @@ export default function SeriesPage() {
                       <p className="text-xs uppercase tracking-[0.1em] text-white/70 group-hover:text-white transition-colors font-light leading-snug">
                         {product.name}
                       </p>
-                      <p className="text-xs font-mono text-white/40 ml-2 flex-shrink-0">₺{product.price}</p>
+                      <div className="flex flex-col items-end ml-2 flex-shrink-0">
+                        <p className="text-xs font-mono text-white/60">₺{product.price}</p>
+                        {product.compareAtPrice && parseFloat(product.compareAtPrice) > parseFloat(product.price) && (
+                          <>
+                            <p className="text-[9px] font-mono text-white/25 line-through">₺{product.compareAtPrice}</p>
+                            <span className="text-[8px] font-bold text-white/60 bg-white/10 px-1.5 py-0.5 mt-0.5">
+                              %{Math.round((1 - parseFloat(product.price) / parseFloat(product.compareAtPrice)) * 100)}
+                            </span>
+                          </>
+                        )}
+                      </div>
                     </div>
                     <p className="text-[9px] uppercase tracking-widest text-white/20 mt-1">{product.category}</p>
                   </Link>

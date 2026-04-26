@@ -14,6 +14,7 @@ interface Product {
   name: string;
   description: string;
   price: string;
+  compareAtPrice?: string;
   sizes: string[];
   image: string;
   stock: number;
@@ -158,9 +159,20 @@ export default function ProductPage() {
               <h1 className="text-3xl lg:text-4xl font-light heading-style uppercase tracking-[0.1em] mb-4 text-white">
                 {product.name}
               </h1>
-              <p className={`text-lg font-light ${dropArchived ? "text-white/20 line-through" : "text-white/60"}`}>
-                ₺{product.price}
-              </p>
+              {/* Price display */}
+              {dropArchived ? (
+                <p className="text-lg font-light text-white/20 line-through">₺{product.price}</p>
+              ) : product.compareAtPrice && parseFloat(product.compareAtPrice) > parseFloat(product.price) ? (
+                <div className="flex items-center gap-3 flex-wrap">
+                  <span className="text-2xl font-light text-white">₺{parseInt(product.price).toLocaleString("tr-TR")}</span>
+                  <span className="text-base font-light text-white/30 line-through">₺{parseInt(product.compareAtPrice).toLocaleString("tr-TR")}</span>
+                  <span className="text-[9px] font-bold uppercase tracking-widest text-white bg-white/15 px-2.5 py-1">
+                    %{Math.round((1 - parseFloat(product.price) / parseFloat(product.compareAtPrice)) * 100)} İndirim
+                  </span>
+                </div>
+              ) : (
+                <p className="text-xl font-light text-white/60">₺{parseInt(product.price).toLocaleString("tr-TR")}</p>
+              )}
             </div>
 
             <p className="text-white/50 font-light leading-relaxed mb-12 text-sm tracking-wide">

@@ -10,10 +10,11 @@ import { db } from "@/lib/firebase";
 interface Product {
   id: string;
   name: string;
-  category: string;        // product type: hoodie, t-shirt etc
-  seriesSlug?: string;     // e.g. "silent-series"
-  dropNumber?: number;     // e.g. 1
+  category: string;
+  seriesSlug?: string;
+  dropNumber?: number;
   price: string;
+  compareAtPrice?: string;   // original / crossed-out price
   stock: number;
   sizeStock?: Record<string, number>;
   sizes: string[];
@@ -43,6 +44,7 @@ const EMPTY_FORM = {
   seriesSlug: "",
   dropNumber: "",
   price: "",
+  compareAtPrice: "",
   sizes: "S,M,L,XL",
   sizeStock: {} as Record<string, number>,
   description: "",
@@ -119,6 +121,7 @@ export default function AdminProducts() {
         seriesSlug: formData.seriesSlug || null,
         dropNumber: formData.dropNumber ? parseInt(formData.dropNumber) : null,
         price: formData.price,
+        compareAtPrice: formData.compareAtPrice || null,
         sizes,
         sizeStock,
         stock: totalStk,
@@ -160,6 +163,7 @@ export default function AdminProducts() {
       seriesSlug: product.seriesSlug || "",
       dropNumber: product.dropNumber ? String(product.dropNumber) : "",
       price: product.price,
+      compareAtPrice: product.compareAtPrice || "",
       sizes: sizes.join(", "),
       sizeStock,
       description: product.description || "",
@@ -355,11 +359,31 @@ export default function AdminProducts() {
                 </div>
 
                 <div className="col-span-2 md:col-span-1 space-y-2">
-                  <label className="text-[10px] uppercase tracking-[0.2em] text-white/50">Fiyat (₺) *</label>
+                  <label className="text-[10px] uppercase tracking-[0.2em] text-white/50">Satış Fiyatı (₺) *</label>
                   <input required type="number" value={formData.price}
                     onChange={e => setFormData(f => ({ ...f, price: e.target.value }))}
                     className="w-full bg-white/5 border border-white/10 rounded p-3 text-sm focus:border-white outline-none transition-colors" />
                 </div>
+
+                <div className="col-span-2 md:col-span-1 space-y-2">
+                  <div className="flex items-center justify-between">
+                    <label className="text-[10px] uppercase tracking-[0.2em] text-white/50">
+                      Karşılaştırma Fiyatı (₺)
+                    </label>
+                    {formData.compareAtPrice && formData.price &&
+                     parseFloat(formData.compareAtPrice) > parseFloat(formData.price) && (
+                      <span className="text-[9px] font-bold text-green-400 bg-green-400/10 px-2 py-0.5 rounded">
+                        %{Math.round((1 - parseFloat(formData.price) / parseFloat(formData.compareAtPrice)) * 100)} İNDİRİM
+                      </span>
+                    )}
+                  </div>
+                  <input type="number" value={formData.compareAtPrice}
+                    onChange={e => setFormData(f => ({ ...f, compareAtPrice: e.target.value }))}
+                    placeholder="Boş = indirim yok"
+                    className="w-full bg-white/5 border border-white/10 rounded p-3 text-sm focus:border-white outline-none transition-colors" />
+                  <p className="text-[9px] text-white/20">Üzeri çizili asıl fiyat. Satış fiyatından büyük olmalı.</p>
+                </div>
+
                 <div className="col-span-2 md:col-span-1 space-y-2">
                   <label className="text-[10px] uppercase tracking-[0.2em] text-white/50">Bedenler (Virgülle)</label>
                   <input type="text" value={formData.sizes}
@@ -369,6 +393,7 @@ export default function AdminProducts() {
                   <p className="text-[10px] text-white/30">Beden yazınca aşağıda stok alanları otomatik açılır</p>
                 </div>
               </div>
+
 
               {/* Per-Size Stock */}
               {currentSizes.length > 0 && (
