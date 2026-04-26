@@ -1,5 +1,5 @@
 import { NextResponse } from 'next/server';
-import { collection, query, where, getDocs, doc, setDoc, deleteDoc, getDoc } from "firebase/firestore";
+import { collection, query, where, getDocs, doc, setDoc, deleteDoc, getDoc, updateDoc, arrayUnion, increment } from "firebase/firestore";
 import { db } from "@/lib/firebase";
 import crypto from 'crypto';
 import { Resend } from 'resend';
@@ -191,6 +191,17 @@ export async function POST(req: Request): Promise<Response> {
         console.log("🗑️ Deleted pendingCheckout:", pendingDocId);
       } catch (e) { console.error("Cleanup error:", e); }
 
+      // Mark coupon as used (if one was applied)
+      if (pendingData.couponId && pendingData.customerEmail) {
+        try {
+          await updateDoc(doc(db, "discountCodes", pendingData.couponId), {
+            usedCount: increment(1),
+            usedBy: arrayUnion(pendingData.customerEmail.toLowerCase()),
+          });
+          console.log("✅ Coupon marked as used:", pendingData.couponId);
+        } catch (e) { console.error("Coupon update error:", e); }
+      }
+
       // Admin email
       if (resend && ADMIN_EMAIL) {
         try {
@@ -201,7 +212,7 @@ export async function POST(req: Request): Promise<Response> {
             html: `<h2>✅ Ödeme Alındı</h2>
               <p><b>Sipariş:</b> ${confirmedOrderId}</p>
               <p><b>Müşteri:</b> ${pendingData.customerName} (${pendingData.customerEmail})</p>
-              <p><b>Tutar:</b> ₺${pendingData.total}</p>
+              <p><b>Tutar:</b> ₺${pendingData.total}${pendingData.discountAmount ? ` (${pendingData.discountAmount}₺ indirim uygulandı)` : ""}</p>
               <a href="${SITE_URL}/admin/orders" style="background:#000;color:#fff;padding:12px 24px;text-decoration:none;display:inline-block;margin-top:12px;">Admin Paneli</a>`,
           });
         } catch (e) { console.error("Email error:", e); }
@@ -210,6 +221,7 @@ export async function POST(req: Request): Promise<Response> {
     } catch (dbError) {
       console.error("Order creation error:", dbError);
     }
+
 
     return NextResponse.redirect(`${SITE_URL}/checkout/success?kod=${encodeURIComponent(confirmedOrderId)}`, { status: 303 });
 

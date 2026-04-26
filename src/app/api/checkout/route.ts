@@ -138,7 +138,7 @@ export async function POST(req: Request): Promise<Response> {
     }
 
     const body = await req.json();
-    const { customerName, customerEmail, customerPhone, address, items, total } = body;
+    const { customerName, customerEmail, customerPhone, address, items, total, couponCode, couponId, discountAmount, originalTotal } = body;
 
     // Create pending checkout — NO order code yet. Code is generated only after payment confirms.
     const orderRef = await addDoc(collection(db, "pendingCheckouts"), {
@@ -148,9 +148,14 @@ export async function POST(req: Request): Promise<Response> {
       address,
       items,
       total,
+      originalTotal: originalTotal || total,
+      couponCode: couponCode || null,
+      couponId: couponId || null,
+      discountAmount: discountAmount || 0,
       paymentStatus: "Pending",
       createdAt: serverTimestamp()
     });
+
 
     // Decrease stock for each item — beden bazlı (sizeStock) veya toplam (stock)
     for (const item of items) {

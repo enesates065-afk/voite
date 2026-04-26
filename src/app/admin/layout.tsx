@@ -1,5 +1,5 @@
 import Link from "next/link";
-import { LayoutDashboard, ShoppingCart, CreditCard, Package, LogOut, Layers } from "lucide-react";
+import { LayoutDashboard, ShoppingCart, CreditCard, Package, LogOut, Layers, Tag } from "lucide-react";
 
 export const metadata = {
   title: "VOITÉ. Admin",
@@ -33,6 +33,9 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
           </Link>
           <Link href="/admin/drops" className="flex items-center gap-4 px-2 py-2 text-[10px] font-light uppercase tracking-[0.2em] text-white/50 hover:text-white transition-colors">
             <Layers size={14} /> Seriler & Droplar
+          </Link>
+          <Link href="/admin/discount-codes" className="flex items-center gap-4 px-2 py-2 text-[10px] font-light uppercase tracking-[0.2em] text-white/50 hover:text-white transition-colors">
+            <Tag size={14} /> İndirim Kodları
           </Link>
         </nav>
 
