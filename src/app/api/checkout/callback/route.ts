@@ -9,7 +9,7 @@ const iyzipay = new Iyzipay({
   uri: process.env.IYZICO_BASE_URL || 'https://sandbox-api.iyzipay.com'
 });
 
-export async function POST(req: Request) {
+export async function POST(req: Request): Promise<Response> {
   try {
     const formData = await req.formData();
     const token = formData.get("token") as string;
@@ -19,7 +19,7 @@ export async function POST(req: Request) {
     }
 
     // Retrieve payment details using token
-    return new Promise((resolve) => {
+    return new Promise<Response>((resolve) => {
       iyzipay.checkoutForm.retrieve({
         locale: Iyzipay.LOCALE.TR,
         conversationId: '123456789', // Arbitrary for retrieve, but we rely on result.conversationId

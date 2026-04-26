@@ -9,7 +9,7 @@ const iyzipay = new Iyzipay({
   uri: process.env.IYZICO_BASE_URL || 'https://sandbox-api.iyzipay.com'
 });
 
-export async function POST(req: Request) {
+export async function POST(req: Request): Promise<Response> {
   try {
     const body = await req.json();
     const { customerName, customerEmail, customerPhone, address, items, total } = body;
@@ -84,7 +84,7 @@ export async function POST(req: Request) {
       }))
     };
 
-    return new Promise((resolve, reject) => {
+    return new Promise<Response>((resolve, reject) => {
       iyzipay.checkoutFormInitialize.create(request, (err: any, result: any) => {
         if (err) {
           console.error("Iyzico Error:", err);
