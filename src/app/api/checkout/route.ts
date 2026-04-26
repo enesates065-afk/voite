@@ -140,10 +140,10 @@ export async function POST(req: Request): Promise<Response> {
     const body = await req.json();
     const { customerName, customerEmail, customerPhone, address, items, total } = body;
 
-    // Create pending order in Firestore
+    // Create pending checkout — NOT orders. Orders are created only after payment success in callback.
     const shortOrderId = "VOI-" + Math.floor(100000 + Math.random() * 900000).toString();
 
-    const orderRef = await addDoc(collection(db, "orders"), {
+    const orderRef = await addDoc(collection(db, "pendingCheckouts"), {
       orderId: shortOrderId,
       customerName,
       customerEmail,
@@ -151,7 +151,6 @@ export async function POST(req: Request): Promise<Response> {
       address,
       items,
       total,
-      status: "Bekliyor",
       paymentStatus: "Pending",
       createdAt: serverTimestamp()
     });

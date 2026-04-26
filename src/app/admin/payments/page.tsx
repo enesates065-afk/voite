@@ -20,34 +20,60 @@ interface Order {
 
 export default function AdminPayments() {
   const [orders, setOrders] = useState<Order[]>([]);
+  const [completedList, setCompletedList] = useState<Order[]>([]);
+  const [pendingList, setPendingList] = useState<Order[]>([]);
   const [loading, setLoading] = useState(true);
   const [tab, setTab] = useState<"completed" | "pending">("completed");
 
   useEffect(() => {
-    fetchOrders();
+    fetchData();
   }, []);
 
-  const fetchOrders = async () => {
+  const fetchData = async () => {
     try {
-      const q = query(collection(db, "orders"), orderBy("createdAt", "desc"));
-      const snap = await getDocs(q);
-      const data: Order[] = [];
-      snap.forEach((doc) => {
-        const d = doc.data();
-        data.push({
-          id: doc.id,
-          orderId: d.orderId || doc.id.slice(0, 8),
-          customerName: d.customerName || "Anonim",
-          customerEmail: d.customerEmail || "",
-          total: d.total || 0,
-          status: d.status || "Bekliyor",
-          paymentStatus: d.paymentStatus || "Pending",
-          paymentId: d.paymentId || "-",
-          createdAt: d.createdAt,
-          items: d.items || [],
+      // Completed orders — orders collection
+      const ordQ = query(collection(db, "orders"), orderBy("createdAt", "desc"));
+      const ordSnap = await getDocs(ordQ);
+      const completed: Order[] = [];
+      ordSnap.forEach((d) => {
+        const data = d.data();
+        completed.push({
+          id: d.id,
+          orderId: data.orderId || d.id.slice(0, 8),
+          customerName: data.customerName || "Anonim",
+          customerEmail: data.customerEmail || "",
+          total: data.total || 0,
+          status: data.status || "Ödendi",
+          paymentStatus: data.paymentStatus || "Success",
+          paymentId: data.paymentId || "-",
+          createdAt: data.createdAt,
+          items: data.items || [],
         });
       });
-      setOrders(data);
+
+      // Abandoned / pending — pendingCheckouts collection
+      const pendQ = query(collection(db, "pendingCheckouts"), orderBy("createdAt", "desc"));
+      const pendSnap = await getDocs(pendQ);
+      const pending: Order[] = [];
+      pendSnap.forEach((d) => {
+        const data = d.data();
+        pending.push({
+          id: d.id,
+          orderId: data.orderId || d.id.slice(0, 8),
+          customerName: data.customerName || "Anonim",
+          customerEmail: data.customerEmail || "",
+          total: data.total || 0,
+          status: "Yarıda Bırakıldı",
+          paymentStatus: "Pending",
+          paymentId: "-",
+          createdAt: data.createdAt,
+          items: data.items || [],
+        });
+      });
+
+      setOrders([...completed, ...pending]);
+      setCompletedList(completed);
+      setPendingList(pending);
     } catch (e) {
       console.error(e);
     } finally {
@@ -55,13 +81,8 @@ export default function AdminPayments() {
     }
   };
 
-  const completedOrders = orders.filter(o =>
-    o.paymentStatus === "Success" || o.status === "Ödendi" || o.status === "Kargolandı" || o.status === "Teslim Edildi"
-  );
-
-  const pendingOrders = orders.filter(o =>
-    o.paymentStatus === "Pending" && o.status === "Bekliyor"
-  );
+  const completedOrders = completedList;
+  const pendingOrders = pendingList;
 
   const totalRevenue = completedOrders.reduce((sum, o) => sum + Number(o.total), 0);
 
