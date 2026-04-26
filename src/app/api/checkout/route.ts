@@ -267,14 +267,15 @@ export async function POST(req: Request): Promise<Response> {
     console.log("Iyzico response:", JSON.stringify(result));
 
     if (result.status === "success" && result.paymentPageUrl) {
-      // Save Iyzico token to Firestore so callback can reliably find this order
+      // Save Iyzico token to pendingCheckouts so callback can reliably find this pending order
       if (result.token) {
         try {
-          await updateDoc(doc(db, "orders", orderRef.id), {
+          await updateDoc(doc(db, "pendingCheckouts", orderRef.id), {
             iyzicoToken: result.token,
           });
+          console.log("Saved iyzicoToken to pendingCheckouts:", orderRef.id);
         } catch (e) {
-          console.error("Failed to save token to order:", e);
+          console.error("Failed to save token to pendingCheckout:", e);
         }
       }
       // Send emails asynchronously (don't await - don't block the redirect)

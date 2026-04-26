@@ -55,23 +55,48 @@ function TrackingContent() {
     setSearched(true);
 
     try {
-      const q = query(collection(db, "orders"), where("orderId", "==", trackCode));
-      const snap = await getDocs(q);
+      // Search in orders first (paid)
+      let found = false;
+      const ordQ = query(collection(db, "orders"), where("orderId", "==", trackCode));
+      const ordSnap = await getDocs(ordQ);
 
-      if (snap.empty) {
-        setError("Bu koda ait sipariş bulunamadı. Kodu doğru girdiğinizden emin olun.");
-      } else {
-        const data = snap.docs[0].data();
+      if (!ordSnap.empty) {
+        const data = ordSnap.docs[0].data();
         setOrder({
           orderId: data.orderId || trackCode,
-          status: data.status || "Bekliyor",
-          paymentStatus: data.paymentStatus || "Pending",
+          status: data.status || "Ödendi",
+          paymentStatus: data.paymentStatus || "Success",
           customerName: data.customerName || "",
           items: data.items || [],
           total: data.total || 0,
           createdAt: data.createdAt,
           paymentId: data.paymentId,
         });
+        found = true;
+      }
+
+      // If not in orders, check pendingCheckouts (payment may still be processing)
+      if (!found) {
+        const pendQ = query(collection(db, "pendingCheckouts"), where("orderId", "==", trackCode));
+        const pendSnap = await getDocs(pendQ);
+        if (!pendSnap.empty) {
+          const data = pendSnap.docs[0].data();
+          setOrder({
+            orderId: data.orderId || trackCode,
+            status: "Bekliyor",
+            paymentStatus: "Pending",
+            customerName: data.customerName || "",
+            items: data.items || [],
+            total: data.total || 0,
+            createdAt: data.createdAt,
+            paymentId: undefined,
+          });
+          found = true;
+        }
+      }
+
+      if (!found) {
+        setError("Bu koda ait sipariş bulunamadı. Kodu doğru girdiğinizden emin olun.");
       }
     } catch (e) {
       setError("Bir hata oluştu. Lütfen tekrar deneyin.");
