@@ -156,7 +156,9 @@ export default function AdminProducts() {
     }
     setFormData({
       name: product.name,
-      category: product.category || "Drop 01",
+      category: product.category || "hoodie",
+      seriesSlug: product.seriesSlug || "",
+      dropNumber: product.dropNumber ? String(product.dropNumber) : "",
       price: product.price,
       sizes: sizes.join(", "),
       sizeStock,
