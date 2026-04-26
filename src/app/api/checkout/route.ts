@@ -36,7 +36,7 @@ export async function POST(req: Request): Promise<Response> {
     const name = nameParts.join(" ") || customerName;
 
     // Initialize Iyzico Checkout Form
-    const request = {
+    const request: any = {
       locale: Iyzipay.LOCALE.TR,
       conversationId: orderRef.id, // Using Firestore document ID for tracking
       price: total.toString(),

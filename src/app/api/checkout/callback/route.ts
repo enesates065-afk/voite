@@ -24,7 +24,7 @@ export async function POST(req: Request): Promise<Response> {
         locale: Iyzipay.LOCALE.TR,
         conversationId: '123456789', // Arbitrary for retrieve, but we rely on result.conversationId
         token: token
-      }, async (err: any, result: any) => {
+      } as any, async (err: any, result: any) => {
         
         if (err || result.status !== "success" || result.paymentStatus !== "SUCCESS") {
           console.error("Iyzico Callback Error:", err || result);
