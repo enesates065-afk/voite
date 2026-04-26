@@ -7,19 +7,48 @@ const IYZICO_API_KEY = process.env.IYZICO_API_KEY || '';
 const IYZICO_SECRET_KEY = process.env.IYZICO_SECRET_KEY || '';
 const IYZICO_BASE_URL = process.env.IYZICO_BASE_URL || 'https://sandbox-api.iyzipay.com';
 
-function generateAuthHeader(body: string): string {
-  const randomString = Math.random().toString(36).substring(2);
-  const dataToSign = IYZICO_API_KEY + randomString + IYZICO_SECRET_KEY + body;
+// Generate PKI string from object (Iyzico's specific format)
+function toPkiString(obj: any): string {
+  if (obj === null || obj === undefined) return '';
+  if (typeof obj !== 'object') return String(obj);
+  if (Array.isArray(obj)) {
+    return obj.map((item) => `[${toPkiString(item)}]`).join(',');
+  }
+  return Object.keys(obj)
+    .map((key) => {
+      const val = obj[key];
+      if (val === null || val === undefined) return '';
+      if (Array.isArray(val)) {
+        return val.map((item) => `${key}=[${toPkiString(item)}]`).join(',');
+      }
+      if (typeof val === 'object') {
+        return `${key}=[${toPkiString(val)}]`;
+      }
+      return `${key}=${val}`;
+    })
+    .filter(Boolean)
+    .join(',');
+}
+
+function generateAuthHeader(requestObj: any): { authorization: string; randomKey: string } {
+  const randomKey = Math.random().toString(36).substring(2) + Math.random().toString(36).substring(2);
+  const pkiString = `[${toPkiString(requestObj)}]`;
+  const hashStr = IYZICO_API_KEY + randomKey + IYZICO_SECRET_KEY + pkiString;
   const signature = crypto.createHmac('sha256', IYZICO_SECRET_KEY)
-    .update(dataToSign)
+    .update(hashStr)
     .digest('base64');
-  return `IYZWS apiKey=${IYZICO_API_KEY}&randomKey=${randomString}&signature=${signature}`;
+  return {
+    authorization: `IYZWS apiKey=${IYZICO_API_KEY}&randomKey=${randomKey}&signature=${signature}`,
+    randomKey
+  };
 }
 
 export async function POST(req: Request): Promise<Response> {
   try {
     if (!IYZICO_API_KEY || !IYZICO_SECRET_KEY) {
-      return NextResponse.json({ error: "Iyzico API anahtarları eksik. Lütfen Vercel ortam değişkenlerini kontrol edin." }, { status: 500 });
+      return NextResponse.json({
+        error: "Iyzico API anahtarları eksik. Lütfen Vercel ortam değişkenlerini kontrol edin."
+      }, { status: 500 });
     }
 
     const body = await req.json();
@@ -27,7 +56,7 @@ export async function POST(req: Request): Promise<Response> {
 
     // Create a pending order in Firestore
     const shortOrderId = "VOI-" + Math.floor(100000 + Math.random() * 900000).toString();
-    
+
     const orderRef = await addDoc(collection(db, "orders"), {
       orderId: shortOrderId,
       customerName,
@@ -43,17 +72,20 @@ export async function POST(req: Request): Promise<Response> {
 
     // Prepare buyer name/surname
     const nameParts = customerName.trim().split(" ");
-    const surname = nameParts.length > 1 ? nameParts.pop()! : "User";
+    const surname = nameParts.length > 1 ? nameParts.pop()! : "Kullanici";
     const name = nameParts.join(" ") || customerName;
 
     // Format phone: Iyzico expects +90XXXXXXXXXX
-    const phone = customerPhone.startsWith('+') ? customerPhone : `+90${customerPhone}`;
+    const rawPhone = customerPhone.replace(/\D/g, '');
+    const phone = rawPhone.startsWith('90') ? `+${rawPhone}` : `+90${rawPhone}`;
 
-    const requestBody = {
+    const totalFormatted = total.toFixed(2);
+
+    const requestObj = {
       locale: "tr",
       conversationId: orderRef.id,
-      price: total.toFixed(2),
-      paidPrice: total.toFixed(2),
+      price: totalFormatted,
+      paidPrice: totalFormatted,
       currency: "TRY",
       basketId: shortOrderId,
       paymentGroup: "PRODUCT",
@@ -61,8 +93,8 @@ export async function POST(req: Request): Promise<Response> {
       enabledInstallments: [1, 2, 3, 6, 9],
       buyer: {
         id: orderRef.id,
-        name: name,
-        surname: surname,
+        name,
+        surname,
         gsmNumber: phone,
         email: customerEmail,
         identityNumber: "74300864791",
@@ -78,18 +110,18 @@ export async function POST(req: Request): Promise<Response> {
         contactName: customerName,
         city: "Istanbul",
         country: "Turkey",
-        address: address,
+        address,
         zipCode: "34742"
       },
       billingAddress: {
         contactName: customerName,
         city: "Istanbul",
         country: "Turkey",
-        address: address,
+        address,
         zipCode: "34742"
       },
       basketItems: items.map((item: any) => ({
-        id: item.id || String(Math.random()),
+        id: item.id ? String(item.id) : "ITEM",
         name: item.name,
         category1: "Giyim",
         itemType: "PHYSICAL",
@@ -97,27 +129,27 @@ export async function POST(req: Request): Promise<Response> {
       }))
     };
 
-    const requestBodyStr = JSON.stringify(requestBody);
-    const authHeader = generateAuthHeader(requestBodyStr);
+    const { authorization, randomKey } = generateAuthHeader(requestObj);
 
     const iyzicoRes = await fetch(`${IYZICO_BASE_URL}/payment/iyzipos/checkoutform/initialize/auth/ecom`, {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
-        'Authorization': authHeader,
-        'x-iyzi-rnd': authHeader.split('randomKey=')[1]?.split('&')[0] || '',
+        'Authorization': authorization,
+        'x-iyzi-rnd': randomKey,
       },
-      body: requestBodyStr,
+      body: JSON.stringify(requestObj),
     });
 
     const result = await iyzicoRes.json();
+    console.log("Iyzico response:", JSON.stringify(result));
 
     if (result.status === "success" && result.paymentPageUrl) {
       return NextResponse.json({ paymentPageUrl: result.paymentPageUrl });
     } else {
       console.error("Iyzico error:", result);
-      return NextResponse.json({ 
-        error: result.errorMessage || result.errorCode || "Iyzico ödeme başlatılamadı." 
+      return NextResponse.json({
+        error: result.errorMessage || result.errorCode || "Iyzico ödeme başlatılamadı."
       }, { status: 400 });
     }
 
