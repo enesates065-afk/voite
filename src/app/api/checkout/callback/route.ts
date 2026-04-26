@@ -1,16 +1,24 @@
 import { NextResponse } from 'next/server';
 import { doc, updateDoc, getDoc } from "firebase/firestore";
 import { db } from "@/lib/firebase";
-import Iyzipay from 'iyzipay';
 
-const iyzipay = new Iyzipay({
-  apiKey: process.env.IYZICO_API_KEY || 'sandbox-api-key',
-  secretKey: process.env.IYZICO_SECRET_KEY || 'sandbox-secret-key',
-  uri: process.env.IYZICO_BASE_URL || 'https://sandbox-api.iyzipay.com'
-});
 
 export async function POST(req: Request): Promise<Response> {
   try {
+    let Iyzipay;
+    try {
+      Iyzipay = require('iyzipay');
+    } catch (err: any) {
+      console.error("Failed to load Iyzipay:", err);
+      return NextResponse.redirect(`${process.env.NEXT_PUBLIC_SITE_URL || 'http://localhost:3000'}/checkout/error`);
+    }
+
+    const iyzipay = new Iyzipay({
+      apiKey: process.env.IYZICO_API_KEY || 'sandbox-api-key',
+      secretKey: process.env.IYZICO_SECRET_KEY || 'sandbox-secret-key',
+      uri: process.env.IYZICO_BASE_URL || 'https://sandbox-api.iyzipay.com'
+    });
+
     const formData = await req.formData();
     const token = formData.get("token") as string;
 

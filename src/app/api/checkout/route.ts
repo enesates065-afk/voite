@@ -1,16 +1,23 @@
 import { NextResponse } from 'next/server';
 import { collection, addDoc, serverTimestamp } from "firebase/firestore";
 import { db } from "@/lib/firebase";
-import Iyzipay from 'iyzipay';
 
-const iyzipay = new Iyzipay({
-  apiKey: process.env.IYZICO_API_KEY || 'sandbox-api-key',
-  secretKey: process.env.IYZICO_SECRET_KEY || 'sandbox-secret-key',
-  uri: process.env.IYZICO_BASE_URL || 'https://sandbox-api.iyzipay.com'
-});
 
 export async function POST(req: Request): Promise<Response> {
   try {
+    let Iyzipay;
+    try {
+      Iyzipay = require('iyzipay');
+    } catch (err: any) {
+      return NextResponse.json({ error: "Iyzipay paketi yüklenemedi: " + err.message }, { status: 500 });
+    }
+
+    const iyzipay = new Iyzipay({
+      apiKey: process.env.IYZICO_API_KEY || 'sandbox-api-key',
+      secretKey: process.env.IYZICO_SECRET_KEY || 'sandbox-secret-key',
+      uri: process.env.IYZICO_BASE_URL || 'https://sandbox-api.iyzipay.com'
+    });
+
     const body = await req.json();
     const { customerName, customerEmail, customerPhone, address, items, total } = body;
 
