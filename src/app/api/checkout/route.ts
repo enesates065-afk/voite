@@ -107,9 +107,9 @@ async function sendOrderEmails(order: {
   `;
 
   try {
-    // Email to customer
+    // Email to customer — uses onboarding@resend.dev until voite.app domain is verified on Resend
     await resend.emails.send({
-      from: 'VOITÉ. <noreply@voite.app>',
+      from: 'VOITÉ. <onboarding@resend.dev>',
       to: order.customerEmail,
       subject: `Sipariş Onayı — ${order.orderId}`,
       html: customerHtml,
@@ -118,7 +118,7 @@ async function sendOrderEmails(order: {
     // Notification to admin
     if (ADMIN_EMAIL) {
       await resend.emails.send({
-        from: 'VOITÉ. <noreply@voite.app>',
+        from: 'VOITÉ. <onboarding@resend.dev>',
         to: ADMIN_EMAIL,
         subject: `Yeni Sipariş: ${order.orderId} — ₺${order.total}`,
         html: `<h2>Yeni sipariş alındı</h2><p>Sipariş No: ${order.orderId}</p><p>Müşteri: ${order.customerName} (${order.customerEmail})</p><p>Toplam: ₺${order.total}</p><p>Adres: ${order.address}</p>`,
