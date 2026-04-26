@@ -46,6 +46,10 @@ export default function CheckoutPage() {
       const data = await response.json();
 
       if (response.ok && data.paymentPageUrl) {
+        // Save orderId so success page can display it
+        if (data.orderId) {
+          localStorage.setItem('voite_last_order_id', data.orderId);
+        }
         // Iyzico ödeme sayfasına yönlendir
         window.location.href = data.paymentPageUrl;
       } else {

@@ -45,7 +45,8 @@ export default function Navigation() {
             { name: "Drop", href: "/drop" },
             { name: "Temel Parçalar", href: "/temel-parcalar" },
             { name: "Arşiv", href: "/arsiv" },
-            { name: "Hakkımızda", href: "/hakkimizda" }
+            { name: "Hakkımızda", href: "/hakkimizda" },
+            { name: "Sipariş Takibi", href: "/siparis-takibi" },
           ].map((item) => (
             <Link key={item.name} href={item.href} className="text-xs font-light uppercase tracking-[0.2em] text-white/70 hover:text-white transition-colors relative group">
               {item.name}
@@ -87,7 +88,8 @@ export default function Navigation() {
                 { name: "Drop", href: "/drop" },
                 { name: "Temel Parçalar", href: "/temel-parcalar" },
                 { name: "Arşiv", href: "/arsiv" },
-                { name: "Hakkımızda", href: "/hakkimizda" }
+                { name: "Hakkımızda", href: "/hakkimizda" },
+                { name: "Sipariş Takibi", href: "/siparis-takibi" },
               ].map((item) => (
                 <Link 
                   key={item.name}

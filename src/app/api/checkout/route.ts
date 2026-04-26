@@ -268,7 +268,7 @@ export async function POST(req: Request): Promise<Response> {
       }
       // Send emails asynchronously (don't await - don't block the redirect)
       sendOrderEmails({ orderId: shortOrderId, customerName, customerEmail, address, items, total });
-      return NextResponse.json({ paymentPageUrl: result.paymentPageUrl });
+      return NextResponse.json({ paymentPageUrl: result.paymentPageUrl, orderId: shortOrderId });
     }
 
     return NextResponse.json({
