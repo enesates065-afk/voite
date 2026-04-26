@@ -7,17 +7,23 @@ import { db } from "@/lib/firebase";
 
 interface Order {
   id: string;
+  orderId?: string;
+  paymentId?: string;
   customerName: string;
   customerEmail: string;
+  customerPhone?: string;
+  address?: string;
   date: string;
   total: number;
   status: string;
+  paymentStatus?: string;
   items: any[];
 }
 
 export default function AdminOrders() {
   const [orders, setOrders] = useState<Order[]>([]);
   const [loading, setLoading] = useState(true);
+  const [activeOrder, setActiveOrder] = useState<Order | null>(null);
 
   useEffect(() => {
     fetchOrders();
@@ -32,11 +38,16 @@ export default function AdminOrders() {
         const orderData = doc.data();
         data.push({
           id: doc.id,
+          orderId: orderData.orderId || doc.id.slice(0, 8),
+          paymentId: orderData.paymentId || "-",
           customerName: orderData.customerName || "Anonim",
           customerEmail: orderData.customerEmail || "",
+          customerPhone: orderData.customerPhone || "-",
+          address: orderData.address || "-",
           date: orderData.createdAt ? new Date(orderData.createdAt.seconds * 1000).toLocaleDateString("tr-TR") : "Tarih Yok",
           total: orderData.total || 0,
           status: orderData.status || "Bekliyor",
+          paymentStatus: orderData.paymentStatus || "-",
           items: orderData.items || []
         } as Order);
       });
@@ -105,7 +116,7 @@ export default function AdminOrders() {
                 ) : (
                   orders.map((order) => (
                     <tr key={order.id} className="hover:bg-white/5 transition-colors">
-                      <td className="px-6 py-4 font-mono font-bold text-white">{order.id.slice(0, 8)}...</td>
+                      <td className="px-6 py-4 font-mono font-bold text-white">{order.orderId}</td>
                       <td className="px-6 py-4 text-white/80">{order.customerName}</td>
                       <td className="px-6 py-4 text-white/50">{order.date}</td>
                       <td className="px-6 py-4 font-mono">${order.total}</td>
@@ -127,7 +138,7 @@ export default function AdminOrders() {
                         </select>
                       </td>
                       <td className="px-6 py-4 text-right">
-                        <button className="text-white/50 hover:text-white transition-colors" title="Detayları Gör">
+                        <button className="text-white/50 hover:text-white transition-colors" title="Detayları Gör" onClick={() => setActiveOrder(order)}>
                           <Eye size={18} />
                         </button>
                       </td>
@@ -139,6 +150,67 @@ export default function AdminOrders() {
           </div>
         )}
       </div>
+
+      {activeOrder && (
+        <div className="fixed inset-0 bg-black/80 backdrop-blur-sm z-50 flex items-center justify-center p-4">
+          <div className="bg-[#0a0a0a] border border-white/10 rounded w-full max-w-2xl max-h-[90vh] overflow-y-auto hide-scrollbar">
+            <div className="flex justify-between items-center p-6 border-b border-white/10">
+              <h2 className="text-xl font-bold uppercase tracking-widest heading-style">Sipariş Detayı #{activeOrder.orderId}</h2>
+              <button onClick={() => setActiveOrder(null)} className="text-white/50 hover:text-white">✕</button>
+            </div>
+            <div className="p-6 space-y-8">
+              <div className="grid grid-cols-2 gap-6">
+                <div>
+                  <h3 className="text-xs uppercase tracking-widest text-white/50 mb-2">Müşteri Bilgileri</h3>
+                  <div className="text-sm space-y-1">
+                    <p><span className="text-white/40">İsim:</span> {activeOrder.customerName}</p>
+                    <p><span className="text-white/40">E-posta:</span> {activeOrder.customerEmail}</p>
+                    <p><span className="text-white/40">Telefon:</span> {activeOrder.customerPhone}</p>
+                  </div>
+                </div>
+                <div>
+                  <h3 className="text-xs uppercase tracking-widest text-white/50 mb-2">Teslimat Adresi</h3>
+                  <p className="text-sm whitespace-pre-wrap">{activeOrder.address}</p>
+                </div>
+              </div>
+              
+              <div className="grid grid-cols-2 gap-6 border-t border-white/10 pt-6">
+                <div>
+                  <h3 className="text-xs uppercase tracking-widest text-white/50 mb-2">Sipariş Durumu</h3>
+                  <p className="text-sm font-bold">{activeOrder.status}</p>
+                </div>
+                <div>
+                  <h3 className="text-xs uppercase tracking-widest text-white/50 mb-2">Ödeme Durumu</h3>
+                  <div className="text-sm space-y-1">
+                    <p className="font-bold">{activeOrder.paymentStatus}</p>
+                    <p className="font-mono text-xs text-white/40">ID: {activeOrder.paymentId}</p>
+                  </div>
+                </div>
+              </div>
+
+              <div className="border-t border-white/10 pt-6">
+                <h3 className="text-xs uppercase tracking-widest text-white/50 mb-4">Ürünler</h3>
+                <div className="space-y-4">
+                  {activeOrder.items.map((item, idx) => (
+                    <div key={idx} className="flex justify-between items-center bg-white/5 p-3 rounded">
+                      <div>
+                        <p className="font-bold text-sm">{item.name}</p>
+                        <p className="text-xs text-white/50">Beden: {item.size} | Adet: {item.quantity}</p>
+                      </div>
+                      <p className="font-mono text-sm">${item.price * item.quantity}</p>
+                    </div>
+                  ))}
+                </div>
+              </div>
+              
+              <div className="border-t border-white/10 pt-6 flex justify-between items-center">
+                <span className="font-bold uppercase tracking-widest text-white/50">Toplam Tutar</span>
+                <span className="text-2xl font-mono font-bold">${activeOrder.total}</span>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }

@@ -16,6 +16,7 @@ export default function CheckoutPage() {
   const [formData, setFormData] = useState({
     name: "",
     email: "",
+    phone: "",
     address: ""
   });
   const [loading, setLoading] = useState(false);
@@ -28,24 +29,32 @@ export default function CheckoutPage() {
     setLoading(true);
 
     try {
-      const order = {
-        customerName: formData.name,
-        customerEmail: formData.email,
-        address: formData.address,
-        items: items,
-        total: getCartTotal(),
-        status: "Bekliyor",
-        createdAt: serverTimestamp()
-      };
+      // API'ye ödeme başlatma isteği gönder
+      const response = await fetch('/api/checkout', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          customerName: formData.name,
+          customerEmail: formData.email,
+          customerPhone: formData.phone,
+          address: formData.address,
+          items: items,
+          total: getCartTotal()
+        })
+      });
 
-      await addDoc(collection(db, "orders"), order);
-      
-      setSuccess(true);
-      clearCart();
+      const data = await response.json();
+
+      if (response.ok && data.paymentPageUrl) {
+        // Iyzico ödeme sayfasına yönlendir
+        window.location.href = data.paymentPageUrl;
+      } else {
+        alert(data.error || "Ödeme başlatılırken bir hata oluştu.");
+        setLoading(false);
+      }
     } catch (error) {
-      console.error("Error creating order:", error);
+      console.error("Error creating checkout:", error);
       alert("Sipariş oluşturulurken bir hata oluştu.");
-    } finally {
       setLoading(false);
     }
   };
@@ -99,7 +108,11 @@ export default function CheckoutPage() {
                 <input required type="email" value={formData.email} onChange={e => setFormData({...formData, email: e.target.value})} className="w-full bg-white/5 border border-white/10 rounded p-4 text-sm focus:border-white outline-none" />
               </div>
               <div>
-                <label className="block text-xs uppercase tracking-widest text-white/50 font-bold mb-2">Adres</label>
+                <label className="block text-xs uppercase tracking-widest text-white/50 font-bold mb-2">Telefon (Başında 0 olmadan 5XX...)</label>
+                <input required type="tel" value={formData.phone} onChange={e => setFormData({...formData, phone: e.target.value})} placeholder="5551234567" className="w-full bg-white/5 border border-white/10 rounded p-4 text-sm focus:border-white outline-none" />
+              </div>
+              <div>
+                <label className="block text-xs uppercase tracking-widest text-white/50 font-bold mb-2">Teslimat Adresi</label>
                 <textarea required rows={4} value={formData.address} onChange={e => setFormData({...formData, address: e.target.value})} className="w-full bg-white/5 border border-white/10 rounded p-4 text-sm focus:border-white outline-none" />
               </div>
               
