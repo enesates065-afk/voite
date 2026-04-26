@@ -8,47 +8,51 @@ const IYZICO_SECRET_KEY = process.env.IYZICO_SECRET_KEY || '';
 const IYZICO_BASE_URL = process.env.IYZICO_BASE_URL || 'https://sandbox-api.iyzipay.com';
 
 /**
- * Converts a request object to Iyzico's PKI string format.
- * Mirrors the exact behaviour of the official iyzipay Node.js SDK.
- * Format: [key=value, key2=[nested=val], arrayKey=[[a=1], [a=2]]]
+ * Exact port of the official iyzipay-node SDK's Pki.requestToString()
+ * https://github.com/iyzico/iyzipay-node/blob/master/lib/pki/Pki.js
  */
-function toPkiString(obj: Record<string, any>): string {
+function pkiString(obj: Record<string, any>): string {
   const parts: string[] = [];
 
   for (const key of Object.keys(obj)) {
     const val = obj[key];
     if (val === null || val === undefined) continue;
 
-    if (Array.isArray(val)) {
-      if (val.length === 0) continue;
+    if (Array.isArray(val) && val.length > 0) {
       if (typeof val[0] === 'object') {
-        // Array of objects: arrayKey=[[k=v, k2=v2], [k=v, k2=v2]]
-        const inner = val.map((item) => `[${toPkiString(item)}]`).join(', ');
-        parts.push(`${key}=[${inner}]`);
+        // Array of objects — each element gets its OWN key entry
+        for (const item of val) {
+          parts.push(`${key}=${pkiString(item)}`);
+        }
       } else {
-        // Array of primitives: enabledInstallments=[1, 2, 3]
-        parts.push(`${key}=[${val.join(', ')}]`);
+        // Array of primitives e.g. enabledInstallments=[1,2,3]
+        parts.push(`${key}=[${val.join(',')}]`);
       }
-    } else if (typeof val === 'object') {
-      parts.push(`${key}=[${toPkiString(val)}]`);
+    } else if (typeof val === 'object' && !Array.isArray(val)) {
+      parts.push(`${key}=${pkiString(val)}`);
     } else {
       parts.push(`${key}=${val}`);
     }
   }
 
-  return parts.join(', ');
+  return `[${parts.join(',')}]`;
 }
 
-function generateAuth(requestObj: Record<string, any>): { authorization: string; randomKey: string } {
-  const randomKey = crypto.randomBytes(16).toString('hex');
-  const pkiString = `[${toPkiString(requestObj)}]`;
-  const hashStr = IYZICO_API_KEY + randomKey + IYZICO_SECRET_KEY + pkiString;
-  const signature = crypto.createHmac('sha256', IYZICO_SECRET_KEY)
+/**
+ * Exact port of the official iyzipay-node SDK's IyziAuth
+ * Authorization header: "IYZWS {apiKey}:{base64-hmac-sha256}"
+ * x-iyzi-rnd header: the random string used in the hash
+ */
+function buildAuth(requestObj: Record<string, any>): { authorization: string; randomString: string } {
+  const randomString = Math.random().toString(36).replace(/[^a-z]+/g, '').substring(0, 8);
+  const pki = pkiString(requestObj);
+  const hashStr = IYZICO_API_KEY + randomString + IYZICO_SECRET_KEY + pki;
+  const hash = crypto.createHmac('sha256', IYZICO_SECRET_KEY)
     .update(hashStr, 'utf8')
     .digest('base64');
   return {
-    authorization: `IYZWS apiKey=${IYZICO_API_KEY}&randomKey=${randomKey}&signature=${signature}`,
-    randomKey,
+    authorization: `IYZWS ${IYZICO_API_KEY}:${hash}`,
+    randomString,
   };
 }
 
@@ -56,14 +60,14 @@ export async function POST(req: Request): Promise<Response> {
   try {
     if (!IYZICO_API_KEY || !IYZICO_SECRET_KEY) {
       return NextResponse.json({
-        error: "Iyzico API anahtarları eksik. Vercel Environment Variables bölümünden ekleyin."
+        error: "Iyzico API anahtarları eksik. Vercel → Settings → Environment Variables bölümünden IYZICO_API_KEY ve IYZICO_SECRET_KEY ekleyin."
       }, { status: 500 });
     }
 
     const body = await req.json();
     const { customerName, customerEmail, customerPhone, address, items, total } = body;
 
-    // Create a pending order in Firestore first
+    // Create pending order in Firestore
     const shortOrderId = "VOI-" + Math.floor(100000 + Math.random() * 900000).toString();
 
     const orderRef = await addDoc(collection(db, "orders"), {
@@ -138,16 +142,18 @@ export async function POST(req: Request): Promise<Response> {
       }))
     };
 
-    const { authorization, randomKey } = generateAuth(requestObj);
+    const { authorization, randomString } = buildAuth(requestObj);
 
     const iyzicoRes = await fetch(
       `${IYZICO_BASE_URL}/payment/iyzipos/checkoutform/initialize/auth/ecom`,
       {
         method: 'POST',
         headers: {
+          'Accept': 'application/json',
           'Content-Type': 'application/json',
           'Authorization': authorization,
-          'x-iyzi-rnd': randomKey,
+          'x-iyzi-rnd': randomString,
+          'x-iyzi-client-version': 'iyzipay-node-custom-1.0.0',
         },
         body: JSON.stringify(requestObj),
       }
