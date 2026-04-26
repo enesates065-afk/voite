@@ -3,9 +3,10 @@ import { collection, addDoc, serverTimestamp } from "firebase/firestore";
 import { db } from "@/lib/firebase";
 import crypto from 'crypto';
 
-const IYZICO_API_KEY = process.env.IYZICO_API_KEY || '';
-const IYZICO_SECRET_KEY = process.env.IYZICO_SECRET_KEY || '';
-const IYZICO_BASE_URL = process.env.IYZICO_BASE_URL || 'https://sandbox-api.iyzipay.com';
+// Trim to remove any accidental whitespace/newlines from copy-paste
+const IYZICO_API_KEY = (process.env.IYZICO_API_KEY || '').trim();
+const IYZICO_SECRET_KEY = (process.env.IYZICO_SECRET_KEY || '').trim();
+const IYZICO_BASE_URL = (process.env.IYZICO_BASE_URL || 'https://sandbox-api.iyzipay.com').trim();
 
 /**
  * Exact port of the official iyzipay-node SDK's Pki.requestToString()
@@ -143,6 +144,16 @@ export async function POST(req: Request): Promise<Response> {
     };
 
     const { authorization, randomString } = buildAuth(requestObj);
+
+    // Debug log - will appear in Vercel logs
+    console.log("=== IYZICO DEBUG ===");
+    console.log("API Key length:", IYZICO_API_KEY.length, "starts with:", IYZICO_API_KEY.substring(0, 10));
+    console.log("Secret Key length:", IYZICO_SECRET_KEY.length);
+    console.log("Base URL:", IYZICO_BASE_URL);
+    console.log("PKI:", JSON.stringify(pkiString(requestObj)).substring(0, 200));
+    console.log("Auth header:", authorization.substring(0, 50) + "...");
+    console.log("Random string:", randomString);
+    console.log("====================");
 
     const iyzicoRes = await fetch(
       `${IYZICO_BASE_URL}/payment/iyzipos/checkoutform/initialize/auth/ecom`,
