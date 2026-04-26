@@ -118,7 +118,7 @@ export default function ProductPage() {
               <h1 className="text-3xl lg:text-4xl font-light heading-style uppercase tracking-[0.1em] mb-4 text-white">
                 {product.name}
               </h1>
-              <p className="text-lg font-light text-white/60">${product.price}</p>
+              <p className="text-lg font-light text-white/60">₺{product.price}</p>
             </div>
 
             <p className="text-white/50 font-light leading-relaxed mb-12 text-sm tracking-wide">

@@ -119,7 +119,7 @@ export default function AdminOrders() {
                       <td className="px-6 py-4 font-mono font-bold text-white">{order.orderId}</td>
                       <td className="px-6 py-4 text-white/80">{order.customerName}</td>
                       <td className="px-6 py-4 text-white/50">{order.date}</td>
-                      <td className="px-6 py-4 font-mono">${order.total}</td>
+                      <td className="px-6 py-4 font-mono">₺{order.total.toLocaleString('tr-TR')}</td>
                       <td className="px-6 py-4">
                         <select 
                           value={order.status}
@@ -197,7 +197,7 @@ export default function AdminOrders() {
                         <p className="font-bold text-sm">{item.name}</p>
                         <p className="text-xs text-white/50">Beden: {item.size} | Adet: {item.quantity}</p>
                       </div>
-                      <p className="font-mono text-sm">${item.price * item.quantity}</p>
+                      <p className="font-mono text-sm">₺{(item.price * item.quantity).toLocaleString('tr-TR')}</p>
                     </div>
                   ))}
                 </div>
@@ -205,7 +205,7 @@ export default function AdminOrders() {
               
               <div className="border-t border-white/10 pt-6 flex justify-between items-center">
                 <span className="font-bold uppercase tracking-widest text-white/50">Toplam Tutar</span>
-                <span className="text-2xl font-mono font-bold">${activeOrder.total}</span>
+                <span className="text-2xl font-mono font-bold">₺{Number(activeOrder.total).toLocaleString('tr-TR')}</span>
               </div>
             </div>
           </div>

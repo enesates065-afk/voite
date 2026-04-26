@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { ArrowUpRight, ArrowDownRight, TrendingUp, Users, DollarSign, Package, Loader2 } from "lucide-react";
+import { TrendingUp, Users, Package, Loader2, BarChart3 } from "lucide-react";
 import { collection, getDocs, query, orderBy, limit } from "firebase/firestore";
 import { db } from "@/lib/firebase";
 
@@ -72,10 +72,10 @@ export default function AdminDashboard() {
       {/* Metric Cards */}
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
         {[
-          { title: "Toplam Ciro", value: `$${metrics.totalRevenue}`, change: "Gerçek Veri", isPositive: true, icon: DollarSign },
+          { title: "Toplam Ciro", value: `₺${metrics.totalRevenue.toLocaleString('tr-TR')}`, change: "Gerçek Veri", isPositive: true, icon: TrendingUp },
           { title: "Siparişler", value: metrics.totalOrders.toString(), change: "Gerçek Veri", isPositive: true, icon: Package },
           { title: "Ziyaretçiler", value: "-", change: "Analitik Kurulmadı", isPositive: false, icon: Users },
-          { title: "Dönüşüm Oranı", value: "-", change: "Analitik Kurulmadı", isPositive: true, icon: TrendingUp },
+          { title: "Dönüşüm Oranı", value: "-", change: "Analitik Kurulmadı", isPositive: true, icon: BarChart3 },
         ].map((metric, idx) => (
           <div key={idx} className="bg-[#0a0a0a] border border-white/10 p-6 rounded relative overflow-hidden">
             <div className="flex justify-between items-start mb-4">

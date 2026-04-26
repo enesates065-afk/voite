@@ -140,7 +140,7 @@ export default function CheckoutPage() {
                     <div className="flex-1">
                       <h3 className="font-bold text-sm uppercase">{item.name}</h3>
                       <p className="text-xs text-white/50">Beden: {item.size} | Adet: {item.quantity}</p>
-                      <p className="font-mono text-sm mt-1">${item.price * item.quantity}</p>
+                      <p className="font-mono text-sm mt-1">₺{item.price * item.quantity}</p>
                     </div>
                   </div>
                 ))}
@@ -149,7 +149,7 @@ export default function CheckoutPage() {
               <div className="border-t border-white/10 pt-4 space-y-2 mb-4">
                 <div className="flex justify-between text-white/60 text-sm">
                   <span>Ara Toplam</span>
-                  <span className="font-mono">${getCartTotal()}</span>
+                  <span className="font-mono">₺{getCartTotal()}</span>
                 </div>
                 <div className="flex justify-between text-white/60 text-sm">
                   <span>Kargo</span>
@@ -159,7 +159,7 @@ export default function CheckoutPage() {
 
               <div className="border-t border-white/10 pt-4 flex justify-between items-center">
                 <span className="font-bold uppercase tracking-widest">Toplam</span>
-                <span className="font-mono text-2xl text-white font-bold">${getCartTotal()}</span>
+                <span className="font-mono text-2xl text-white font-bold">₺{getCartTotal()}</span>
               </div>
             </div>
           </div>

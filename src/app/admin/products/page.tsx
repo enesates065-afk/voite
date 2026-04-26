@@ -185,7 +185,7 @@ export default function AdminProducts() {
                           </div>
                         </td>
                         <td className="px-6 py-4 text-white/70">{product.category}</td>
-                        <td className="px-6 py-4 font-mono font-bold">${product.price}</td>
+                        <td className="px-6 py-4 font-mono font-bold">₺{product.price}</td>
                         <td className="px-6 py-4 font-mono">{product.stock}</td>
                         <td className="px-6 py-4">
                           <span className={`px-2 py-1 text-[10px] uppercase tracking-widest font-bold rounded-sm ${status.color}`}>
@@ -239,23 +239,23 @@ export default function AdminProducts() {
                 </div>
 
                 <div className="space-y-2">
-                  <label className="text-xs uppercase tracking-widest text-white/50 font-bold">Fiyat ($)</label>
-                  <input required type="number" value={formData.price} onChange={e => setFormData({...formData, price: e.target.value})} className="w-full bg-white/5 border border-white/10 rounded p-3 text-sm focus:border-fener-gold outline-none" />
+                  <label className="text-xs uppercase tracking-widest text-white/50 font-bold">Fiyat (₺)</label>
+                  <input required type="number" value={formData.price} onChange={e => setFormData({...formData, price: e.target.value})} className="w-full bg-white/5 border border-white/10 rounded p-3 text-sm focus:border-white outline-none" />
                 </div>
 
                 <div className="space-y-2">
                   <label className="text-xs uppercase tracking-widest text-white/50 font-bold">Stok Miktarı</label>
-                  <input required type="number" value={formData.stock} onChange={e => setFormData({...formData, stock: e.target.value})} className="w-full bg-white/5 border border-white/10 rounded p-3 text-sm focus:border-fener-gold outline-none" />
+                  <input required type="number" value={formData.stock} onChange={e => setFormData({...formData, stock: e.target.value})} className="w-full bg-white/5 border border-white/10 rounded p-3 text-sm focus:border-white outline-none" />
                 </div>
 
                 <div className="col-span-2 space-y-2">
                   <label className="text-xs uppercase tracking-widest text-white/50 font-bold">Bedenler (Virgülle ayırın)</label>
-                  <input type="text" value={formData.sizes} onChange={e => setFormData({...formData, sizes: e.target.value})} placeholder="S, M, L, XL" className="w-full bg-white/5 border border-white/10 rounded p-3 text-sm focus:border-fener-gold outline-none" />
+                  <input type="text" value={formData.sizes} onChange={e => setFormData({...formData, sizes: e.target.value})} placeholder="S, M, L, XL" className="w-full bg-white/5 border border-white/10 rounded p-3 text-sm focus:border-white outline-none" />
                 </div>
 
                 <div className="col-span-2 space-y-2">
                   <label className="text-xs uppercase tracking-widest text-white/50 font-bold">Açıklama</label>
-                  <textarea rows={3} value={formData.description} onChange={e => setFormData({...formData, description: e.target.value})} className="w-full bg-white/5 border border-white/10 rounded p-3 text-sm focus:border-fener-gold outline-none" />
+                  <textarea rows={3} value={formData.description} onChange={e => setFormData({...formData, description: e.target.value})} className="w-full bg-white/5 border border-white/10 rounded p-3 text-sm focus:border-white outline-none" />
                 </div>
 
                 <div className="col-span-2 space-y-2">
