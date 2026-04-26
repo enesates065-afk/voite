@@ -2,9 +2,10 @@
 
 import { useState, useEffect, useRef } from "react";
 import Link from "next/link";
-import { ShoppingBag, Menu, X, ChevronDown } from "lucide-react";
+import { ShoppingBag, Menu, X, ChevronDown, Search } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
 import { useCartStore } from "@/store/useCartStore";
+import { SearchModal } from "@/components/SearchModal";
 
 const SERIES = [
   { name: "Silent Series", slug: "silent-series" },
@@ -73,6 +74,7 @@ export default function Navigation() {
   const [isScrolled, setIsScrolled] = useState(false);
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const [mobileSection, setMobileSection] = useState<string | null>(null);
+  const [searchOpen, setSearchOpen] = useState(false);
   const { items, toggleCart } = useCartStore();
 
   useEffect(() => {
@@ -130,19 +132,31 @@ export default function Navigation() {
           </Link>
         </nav>
 
-        {/* Cart */}
-        <button
-          className="text-white/70 hover:text-white transition-colors relative z-50"
-          onClick={toggleCart}
-        >
-          <ShoppingBag size={20} strokeWidth={1.5} />
-          {items.length > 0 && (
-            <span className="absolute -top-1 -right-1 bg-white text-black text-[10px] w-4 h-4 rounded-full flex items-center justify-center">
-              {items.reduce((t, i) => t + i.quantity, 0)}
-            </span>
-          )}
-        </button>
+        {/* Right actions: Search + Cart */}
+        <div className="flex items-center gap-4">
+          <button
+            onClick={() => setSearchOpen(true)}
+            className="text-white/50 hover:text-white transition-colors"
+            aria-label="Ara"
+          >
+            <Search size={18} strokeWidth={1.5} />
+          </button>
+          <button
+            className="text-white/70 hover:text-white transition-colors relative z-50"
+            onClick={toggleCart}
+          >
+            <ShoppingBag size={20} strokeWidth={1.5} />
+            {items.length > 0 && (
+              <span className="absolute -top-1 -right-1 bg-white text-black text-[10px] w-4 h-4 rounded-full flex items-center justify-center">
+                {items.reduce((t, i) => t + i.quantity, 0)}
+              </span>
+            )}
+          </button>
+        </div>
       </div>
+
+      {/* Search modal (portal) */}
+      <SearchModal open={searchOpen} onClose={() => setSearchOpen(false)} />
 
       {/* Mobile Menu */}
       <AnimatePresence>
