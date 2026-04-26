@@ -8,7 +8,7 @@ import { collection, query, where, getDocs } from "firebase/firestore";
 import { db } from "@/lib/firebase";
 
 export default function CheckoutSuccessPage() {
-  const { clearCart, lastOrderId } = useCartStore();
+  const { clearCart } = useCartStore();
   const [copied, setCopied] = useState(false);
   const [orderId, setOrderId] = useState<string>("");
 
