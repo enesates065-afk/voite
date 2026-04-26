@@ -96,7 +96,7 @@ export default function CartDrawer() {
                             <Plus size={14} />
                           </button>
                         </div>
-                        <span className="font-mono font-bold">${item.price * item.quantity}</span>
+                        <span className="font-mono font-bold">₺{item.price * item.quantity}</span>
                       </div>
                     </div>
                   </div>
@@ -109,7 +109,7 @@ export default function CartDrawer() {
               <div className="p-8 border-t border-white/5 bg-[#030303]">
                 <div className="flex justify-between items-center mb-8">
                   <span className="text-xs uppercase tracking-[0.2em] text-white/50 font-light">Toplam</span>
-                  <span className="text-xl font-light text-white">${getCartTotal()}</span>
+                  <span className="text-xl font-light text-white">₺{getCartTotal()}</span>
                 </div>
                 <Link href="/checkout">
                   <button 

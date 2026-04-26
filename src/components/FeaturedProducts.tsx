@@ -103,7 +103,7 @@ export default function FeaturedProducts() {
                 <div>
                   <h3 className="font-light text-sm tracking-[0.1em] uppercase text-white/80 group-hover:text-white transition-colors">{product.name}</h3>
                 </div>
-                <span className="font-light tracking-[0.1em] text-white/50 text-sm">${product.price}</span>
+                <span className="font-light tracking-[0.1em] text-white/50 text-sm">₺{product.price}</span>
               </div>
             </div>
           ))}
