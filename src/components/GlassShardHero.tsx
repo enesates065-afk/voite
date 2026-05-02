@@ -43,28 +43,28 @@ const SHARD_CONFIGS = [
 
 // Background glass fragments — scattered debris
 const BG_FRAGMENTS = [
-  { x: "8%",  y: "18%", w: 60, h: 80,  rot: -32, clip: "polygon(15% 0%, 100% 8%, 88% 100%, 0% 85%)", op: 0.18 },
-  { x: "14%", y: "55%", w: 35, h: 55,  rot: 22,  clip: "polygon(0% 12%, 85% 0%, 100% 88%, 10% 100%)", op: 0.12 },
-  { x: "5%",  y: "75%", w: 50, h: 40,  rot: -45, clip: "polygon(20% 0%, 100% 5%, 80% 100%, 0% 90%)", op: 0.10 },
-  { x: "22%", y: "8%",  w: 40, h: 65,  rot: 18,  clip: "polygon(5% 0%, 100% 10%, 95% 100%, 0% 92%)", op: 0.14 },
-  { x: "28%", y: "82%", w: 55, h: 38,  rot: -25, clip: "polygon(0% 5%, 90% 0%, 100% 95%, 8% 100%)", op: 0.11 },
-  { x: "75%", y: "6%",  w: 45, h: 70,  rot: 28,  clip: "polygon(10% 0%, 100% 5%, 92% 100%, 0% 88%)", op: 0.13 },
-  { x: "82%", y: "60%", w: 38, h: 52,  rot: -18, clip: "polygon(0% 8%, 92% 0%, 100% 90%, 5% 100%)", op: 0.15 },
-  { x: "88%", y: "80%", w: 60, h: 42,  rot: 35,  clip: "polygon(12% 0%, 100% 6%, 88% 100%, 0% 82%)", op: 0.10 },
-  { x: "72%", y: "88%", w: 42, h: 58,  rot: -40, clip: "polygon(5% 2%, 95% 0%, 100% 95%, 0% 98%)", op: 0.12 },
-  { x: "42%", y: "2%",  w: 30, h: 48,  rot: 15,  clip: "polygon(0% 0%, 100% 8%, 92% 100%, 5% 95%)", op: 0.08 },
-  { x: "55%", y: "90%", w: 36, h: 42,  rot: -22, clip: "polygon(8% 0%, 100% 2%, 94% 100%, 0% 98%)", op: 0.09 },
+  { x: "8%", y: "18%", w: 60, h: 80, rot: -32, clip: "polygon(15% 0%, 100% 8%, 88% 100%, 0% 85%)", op: 0.18 },
+  { x: "14%", y: "55%", w: 35, h: 55, rot: 22, clip: "polygon(0% 12%, 85% 0%, 100% 88%, 10% 100%)", op: 0.12 },
+  { x: "5%", y: "75%", w: 50, h: 40, rot: -45, clip: "polygon(20% 0%, 100% 5%, 80% 100%, 0% 90%)", op: 0.10 },
+  { x: "22%", y: "8%", w: 40, h: 65, rot: 18, clip: "polygon(5% 0%, 100% 10%, 95% 100%, 0% 92%)", op: 0.14 },
+  { x: "28%", y: "82%", w: 55, h: 38, rot: -25, clip: "polygon(0% 5%, 90% 0%, 100% 95%, 8% 100%)", op: 0.11 },
+  { x: "75%", y: "6%", w: 45, h: 70, rot: 28, clip: "polygon(10% 0%, 100% 5%, 92% 100%, 0% 88%)", op: 0.13 },
+  { x: "82%", y: "60%", w: 38, h: 52, rot: -18, clip: "polygon(0% 8%, 92% 0%, 100% 90%, 5% 100%)", op: 0.15 },
+  { x: "88%", y: "80%", w: 60, h: 42, rot: 35, clip: "polygon(12% 0%, 100% 6%, 88% 100%, 0% 82%)", op: 0.10 },
+  { x: "72%", y: "88%", w: 42, h: 58, rot: -40, clip: "polygon(5% 2%, 95% 0%, 100% 95%, 0% 98%)", op: 0.12 },
+  { x: "42%", y: "2%", w: 30, h: 48, rot: 15, clip: "polygon(0% 0%, 100% 8%, 92% 100%, 5% 95%)", op: 0.08 },
+  { x: "55%", y: "90%", w: 36, h: 42, rot: -22, clip: "polygon(8% 0%, 100% 2%, 94% 100%, 0% 98%)", op: 0.09 },
   // Near top-left shard
-  { x: "18%", y: "28%", w: 28, h: 42,  rot: -55, clip: "polygon(20% 0%, 100% 15%, 80% 100%, 0% 85%)", op: 0.20 },
-  { x: "24%", y: "42%", w: 22, h: 32,  rot: 40,  clip: "polygon(0% 20%, 80% 0%, 100% 80%, 15% 100%)", op: 0.16 },
+  { x: "18%", y: "28%", w: 28, h: 42, rot: -55, clip: "polygon(20% 0%, 100% 15%, 80% 100%, 0% 85%)", op: 0.20 },
+  { x: "24%", y: "42%", w: 22, h: 32, rot: 40, clip: "polygon(0% 20%, 80% 0%, 100% 80%, 15% 100%)", op: 0.16 },
   // Near top-right shard
-  { x: "68%", y: "30%", w: 32, h: 48,  rot: 48,  clip: "polygon(10% 0%, 100% 12%, 88% 100%, 0% 82%)", op: 0.18 },
-  { x: "76%", y: "18%", w: 24, h: 36,  rot: -38, clip: "polygon(0% 10%, 90% 0%, 100% 88%, 8% 100%)", op: 0.14 },
+  { x: "68%", y: "30%", w: 32, h: 48, rot: 48, clip: "polygon(10% 0%, 100% 12%, 88% 100%, 0% 82%)", op: 0.18 },
+  { x: "76%", y: "18%", w: 24, h: 36, rot: -38, clip: "polygon(0% 10%, 90% 0%, 100% 88%, 8% 100%)", op: 0.14 },
   // Near bottom-left
-  { x: "20%", y: "68%", w: 26, h: 38,  rot: 62,  clip: "polygon(15% 0%, 100% 10%, 85% 100%, 0% 90%)", op: 0.17 },
+  { x: "20%", y: "68%", w: 26, h: 38, rot: 62, clip: "polygon(15% 0%, 100% 10%, 85% 100%, 0% 90%)", op: 0.17 },
   // Near bottom-right
-  { x: "70%", y: "72%", w: 30, h: 44,  rot: -52, clip: "polygon(5% 0%, 95% 8%, 100% 95%, 0% 88%)", op: 0.19 },
-  { x: "78%", y: "85%", w: 20, h: 30,  rot: 30,  clip: "polygon(12% 0%, 100% 5%, 88% 100%, 0% 92%)", op: 0.13 },
+  { x: "70%", y: "72%", w: 30, h: 44, rot: -52, clip: "polygon(5% 0%, 95% 8%, 100% 95%, 0% 88%)", op: 0.19 },
+  { x: "78%", y: "85%", w: 20, h: 30, rot: 30, clip: "polygon(12% 0%, 100% 5%, 88% 100%, 0% 92%)", op: 0.13 },
 ];
 
 function GlassFragment({ f, delay = 0 }: { f: typeof BG_FRAGMENTS[0]; delay?: number }) {
@@ -303,7 +303,7 @@ export default function GlassShardHero() {
               VOITÉ.
             </h1>
             <p className="text-[8px] uppercase tracking-[0.6em] text-white/20 font-light mb-8">
-              Silent Series
+
             </p>
             <p className="text-sm italic text-white/25 font-light mb-10 tracking-wide">
               Not made to be seen. Made to be felt.

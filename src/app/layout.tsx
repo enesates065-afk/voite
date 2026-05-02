@@ -16,8 +16,13 @@ const playfair = Playfair_Display({
 });
 
 export const metadata: Metadata = {
-  title: "VOITÉ. | Silent Series",
-  description: "Not made to be seen. Made to be felt. Minimal luxury streetwear.",
+  title: "VOITÉ. | Minimal Luxury Streetwear",
+  description: "Not made to be seen. Made to be felt. VOITÉ is a minimal luxury streetwear brand releasing limited drops and timeless essentials. Premium cotton, oversized fits, and story-driven series.",
+  icons: {
+    icon: "/favicon.png",
+    shortcut: "/favicon.png",
+    apple: "/favicon.png",
+  },
 };
 
 export default function RootLayout({
