@@ -17,27 +17,27 @@ interface ShardProduct {
 const SHARD_CONFIGS = [
   {
     index: 0, label: "01.",
-    position: { top: "3%", left: "0%" },
-    rotation: -13, scale: 1, width: 415, height: 515,
-    clipPath: "polygon(7% 0%, 100% 2%, 94% 98%, 0% 100%)",
+    position: { top: "5%", left: "2%" },
+    rotation: -14, scale: 1, width: 265, height: 330,
+    clipPath: "polygon(8% 0%, 100% 2%, 94% 96%, 0% 100%)",
   },
   {
     index: 1, label: "02.",
-    position: { top: "1%", right: "0%" },
-    rotation: 12, scale: 0.96, width: 395, height: 495,
-    clipPath: "polygon(2% 3%, 93% 0%, 100% 95%, 5% 100%)",
+    position: { top: "3%", right: "2%" },
+    rotation: 12, scale: 0.95, width: 245, height: 308,
+    clipPath: "polygon(2% 4%, 92% 0%, 100% 92%, 6% 100%)",
   },
   {
     index: 2, label: "03.",
-    position: { bottom: "3%", left: "1%" },
-    rotation: 10, scale: 0.93, width: 400, height: 495,
-    clipPath: "polygon(5% 0%, 98% 3%, 96% 100%, 0% 96%)",
+    position: { bottom: "5%", left: "4%" },
+    rotation: 10, scale: 0.92, width: 248, height: 300,
+    clipPath: "polygon(5% 0%, 98% 3%, 96% 100%, 0% 95%)",
   },
   {
     index: 3, label: "04.",
-    position: { bottom: "1%", right: "1%" },
-    rotation: -11, scale: 0.97, width: 405, height: 500,
-    clipPath: "polygon(3% 2%, 100% 0%, 97% 97%, 1% 100%)",
+    position: { bottom: "3%", right: "3%" },
+    rotation: -11, scale: 0.98, width: 258, height: 318,
+    clipPath: "polygon(3% 2%, 100% 0%, 95% 97%, 2% 100%)",
   },
 ];
 
@@ -296,9 +296,7 @@ export default function GlassShardHero() {
             >
               VOITÉ.
             </h1>
-            <p className="text-[8px] uppercase tracking-[0.72em] text-white/22 font-light mb-6">
-              Silent Series
-            </p>
+
             <p className="text-sm italic text-white/28 font-light mb-10 tracking-wide">
               Not made to be seen. Made to be felt.
             </p>
@@ -306,7 +304,7 @@ export default function GlassShardHero() {
               href="/drop"
               className="pointer-events-auto inline-block border border-white/18 px-12 py-4 text-[10px] uppercase tracking-[0.42em] text-white/55 hover:text-white hover:border-white/38 transition-all duration-300 font-light"
             >
-              Enter
+              Shop
             </Link>
           </motion.div>
         </div>
