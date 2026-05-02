@@ -312,7 +312,7 @@ export default function GlassShardHero() {
               href="/drop"
               className="pointer-events-auto inline-block border border-white/15 px-10 py-4 text-[10px] uppercase tracking-[0.35em] text-white/50 hover:text-white hover:border-white/35 transition-all duration-300 font-light"
             >
-              Enter
+              Shop Void Series
             </Link>
           </motion.div>
         </div>
